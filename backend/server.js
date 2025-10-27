@@ -1,35 +1,110 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config(); 
+const db = require('./db');
+const auth = require('./auth');
 
-// Importa la conexión a DB. Esto ejecuta la función connectDB() del Paso 2.3.
-const db = require('./config/db'); 
+const app = express();
+const PORT = 3000;
 
-const app = express(); 
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use('/uploads', express.static('uploads')); // Para servir imágenes
 
-// Middlewares: configuraciones base
-app.use(cors()); // Permite la comunicación con el frontend (Angular)
-app.use(express.json()); // Permite a Express leer el cuerpo de peticiones JSON
-
-// Puerto (leído de .env, por defecto 3000)
-const PORT = process.env.PORT || 3000;
-
-// =======================================================
-// ZONA DE RUTAS (API Endpoints)
-// =======================================================
-
-// Ruta de prueba: GET http://localhost:3000/
+// ============================================
+// ENDPOINT DE PRUEBA
+// ============================================
 app.get('/', (req, res) => {
-    res.status(200).json({ mensaje: 'API de E-commerce lista para arrancar.' });
+  res.json({ 
+    mensaje: '🚀 Servidor funcionando correctamente',
+    fecha: new Date()
+  });
 });
 
-// Nota: Aquí añadiremos las rutas de /api/admin y /api/productos en los siguientes pasos.
+// ============================================
+// AUTENTICACIÓN Y REGISTRO
+// ============================================
+// Ruta ÚNICA de Login (Admin y Cliente)
+app.post('/api/auth/login', auth.login); 
+
+// Nueva Ruta para el Registro de Clientes
+app.post('/api/auth/register', auth.register); 
+
+// Ruta Protegida de Prueba (Solo para Administradores)
+app.get('/api/admin/dashboard', auth.verifyAdmin, (req, res) => {
+    res.json({ 
+        mensaje: `✅ Acceso Concedido al Dashboard. Usuario: ${req.user.email}`,
+        userId: req.user.id 
+    });
+});
+
+// Ruta Protegida de Prueba (Solo para Clientes, usando el middleware base)
+app.get('/api/cliente/perfil', auth.verifyToken, (req, res) => {
+    if (req.user.role !== 'cliente') {
+         return res.status(403).json({ mensaje: 'Acceso prohibido. Solo para clientes.' });
+    }
+    res.json({
+        mensaje: `Hola ${req.user.nombre}, bienvenido a tu perfil de cliente.`,
+        datos: req.user
+    });
+});
 
 
-// =======================================================
-// INICIO DEL SERVIDOR
-// =======================================================
+
+
+// ============================================
+// PRODUCTOS
+// ============================================
+
+// Obtener todos los productos
+app.get('/api/productos', (req, res) => {
+  const query = 'SELECT * FROM productos WHERE activo = TRUE';
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Error al obtener productos' });
+    }
+    res.json(results);
+  });
+});
+
+// Obtener un producto por ID
+app.get('/api/productos/:id', (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM productos WHERE id = ?';
+  
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Error al obtener producto' });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    res.json(results[0]);
+  });
+});
+
+// Obtener productos por categoría
+app.get('/api/productos/categoria/:categoria', (req, res) => {
+  const { categoria } = req.params;
+  const query = 'SELECT * FROM productos WHERE categoria = ? AND activo = TRUE';
+  
+  db.query(query, [categoria], (err, results) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Error al obtener productos' });
+    }
+    res.json(results);
+  });
+});
+
+// ============================================
+// INICIAR SERVIDOR
+// ============================================
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor Express iniciado en http://localhost:${PORT}`);
+  console.log(`
+  http://localhost:${PORT}
+  `);
 });

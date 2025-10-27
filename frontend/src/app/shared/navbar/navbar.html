@@ -1,0 +1,62 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" routerLink="/productos">
+      <i class="bi bi-bag-fill"></i> FashionStyle
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav mx-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="$event.preventDefault()">Mujer</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="$event.preventDefault()">Hombre</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="$event.preventDefault()">Niños</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" (click)="$event.preventDefault()">Ofertas</a>
+        </li>
+      </ul>
+      
+      <form class="d-flex me-3">
+        <input class="form-control" type="search" placeholder="Buscar..." style="width: 200px;">
+      </form>
+      
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-white">
+          <i class="bi bi-person-circle"></i> {{ nombreUsuario }}
+        </span>
+        
+        <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
+          <i class="bi bi-cart3"></i> Carrito
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="cantidadCarrito > 0">
+            {{ cantidadCarrito }}
+          </span>
+        </button>
+        
+        <button class="btn btn-sm btn-outline-danger" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i> Salir
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Offcanvas del Carrito -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasCarrito">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      <i class="bi bi-cart3"></i> Mi Carrito
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <p class="text-muted text-center">Tu carrito está vacío</p>
+  </div>
+</div>

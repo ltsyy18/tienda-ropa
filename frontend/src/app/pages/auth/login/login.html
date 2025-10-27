@@ -1,0 +1,67 @@
+<div class="login-container">
+    <div class="fashion-header">
+        <div class="logo">🛍️ FashionStyle</div>
+        <h2>Bienvenido a nuestra tienda</h2>
+        <p>Ingresa a tu cuenta para continuar</p>
+    </div>
+
+    <!-- Muestra el mensaje de error si existe -->
+    @if (errorMessage) {
+        <div class="notification error active">
+            {{ errorMessage }}
+        </div>
+    }
+
+    <!-- Usamos (ngSubmit) para llamar a la función en el .ts cuando se envía el formulario -->
+    <form (ngSubmit)="handleLogin()" class="login-form">
+
+        <div class="input-group">
+            <label for="email">Correo electrónico</label>
+            <!-- Enlazamos con la variable 'email' del .ts usando [(ngModel)] -->
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                required 
+                placeholder="tu@email.com"
+                [(ngModel)]="email"
+            >
+        </div>
+
+        <div class="input-group">
+            <label for="password">Contraseña</label>
+            <!-- Usamos la variable 'passwordInputType' para controlar el tipo (text/password) -->
+            <input 
+                [type]="passwordInputType" 
+                id="password" 
+                name="password" 
+                required 
+                placeholder="••••••••"
+                [(ngModel)]="password"
+            >
+            <!-- Llama a la función del .ts con (click) -->
+            <span class="toggle-password" (click)="togglePassword()">👁️</span>
+        </div>
+
+        <div class="remember-forgot">
+            <label class="remember">
+                <input type="checkbox" id="remember">
+                <span>Recordarme</span>
+            </label>
+            <!-- Enlace de Angular para la navegación -->
+            <a routerLink="/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="login-btn" [disabled]="isSubmitting">
+            @if (isSubmitting) {
+                Conectando...
+            } @else {
+                Iniciar Sesión
+            }
+        </button>
+    </form>
+
+    <div class="register-link">
+        ¿No tienes cuenta? <a routerLink="/registro">Regístrate aquí</a>
+    </div>
+</div>

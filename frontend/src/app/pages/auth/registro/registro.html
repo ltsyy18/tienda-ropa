@@ -1,0 +1,72 @@
+
+<!-- Plantilla de Registro de FashionStyle, adaptada del Login -->
+<div class="login-container">
+    <div class="fashion-header">
+        <div class="logo">🛍️ FashionStyle</div>
+        <h2>Crea tu cuenta</h2>
+        <p>Regístrate para acceder a los mejores descuentos</p>
+    </div>
+
+    <!-- Formulario de Angular: usa ngSubmit para llamar a la función en el .ts -->
+    <form (ngSubmit)="handleRegister()" class="login-form">
+        
+        <!-- Nombre y Apellido en línea para mejor UI -->
+        <div class="input-group-row">
+            <div class="input-group">
+                <label for="nombre">Nombre</label>
+                <!-- Enlace de datos con ngModel -->
+                <input type="text" id="nombre" name="nombre" [(ngModel)]="nombre" required placeholder="Tu Nombre">
+            </div>
+            <div class="input-group">
+                <label for="apellido">Apellido</label>
+                <input type="text" id="apellido" name="apellido" [(ngModel)]="apellido" required placeholder="Tu Apellido">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" [(ngModel)]="email" required placeholder="tu@email.com">
+        </div>
+
+        <div class="input-group">
+            <label for="telefono">Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" [(ngModel)]="telefono" required placeholder="+51 987 654 321">
+        </div>
+
+        <div class="input-group">
+            <label for="password">Contraseña</label>
+            <!-- Usamos [type] para cambiar entre 'password' y 'text' -->
+            <input [type]="passwordInputType" id="password" name="password" [(ngModel)]="password" required placeholder="••••••••">
+            <!-- Llamamos a la función togglePassword() en el .ts -->
+            <span class="toggle-password" (click)="togglePassword()">
+                {{ passwordInputType === 'password' ? '👁️' : '🔒' }}
+            </span>
+        </div>
+
+        <!-- Mensajes de Estado (Éxito o Error) -->
+        @if (errorMessage) {
+            <div class="notification error">{{ errorMessage }}</div>
+        }
+        @if (successMessage) {
+            <div class="notification success">{{ successMessage }}</div>
+        }
+
+        <button type="submit" class="login-btn" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Registrando...' : 'Crear Cuenta' }}
+        </button>
+    </form>
+
+    <div class="social-login">
+        <p>O regístrate con</p>
+        <div class="social-buttons">
+            <button class="social-btn google">Google</button>
+            <button class="social-btn facebook">Facebook</button>
+        </div>
+    </div>
+
+    <div class="register-link">
+        ¿Ya tienes cuenta? 
+        <!-- routerLink para navegación de Angular -->
+        <a [routerLink]="['/login']">Inicia Sesión aquí</a>
+    </div>
+</div>
