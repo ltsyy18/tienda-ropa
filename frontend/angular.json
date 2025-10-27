@@ -23,6 +23,7 @@
             ],
             "styles": [
               "bootstrap/dist/css/bootstrap.min.css",
+              "bootstrap-icons/font/bootstrap-icons.css",
               "src/styles.css"
             ],
             "scripts": [

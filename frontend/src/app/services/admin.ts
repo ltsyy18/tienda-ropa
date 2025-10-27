@@ -29,6 +29,15 @@ export class AdminService {
     });
   }
 
+  // Subir imagen (multipart/form-data)
+  uploadImage(file: File): Observable<any> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post(`${this.apiUrl}/upload`, fd, {
+      headers: this.getHeaders()
+    });
+  }
+
   // Editar producto
   editarProducto(id: number, producto: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/productos/${id}`, producto, {

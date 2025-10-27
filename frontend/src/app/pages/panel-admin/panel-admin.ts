@@ -17,6 +17,8 @@ export class PanelAdminComponent implements OnInit {
   productos: any[] = [];
   isLoading: boolean = true;
   modoEdicion: boolean = false;
+  selectedFile: File | null = null;
+  previewUrl: string | null = null;
   
   // Formulario
   productoForm = {
@@ -78,35 +80,72 @@ export class PanelAdminComponent implements OnInit {
       imagen_url: ''
     };
     this.modoEdicion = false;
+    this.selectedFile = null;
+    this.previewUrl = null;
   }
 
   guardarProducto() {
-    if (this.modoEdicion && this.productoForm.id) {
-      // Editar
-      this.adminService.editarProducto(this.productoForm.id, this.productoForm).subscribe({
-        next: () => {
-          alert('Producto actualizado exitosamente');
-          this.cargarProductos();
-          this.limpiarFormulario();
+    const proceedCreateOrEdit = () => {
+      if (this.modoEdicion && this.productoForm.id) {
+        // Editar
+        this.adminService.editarProducto(this.productoForm.id, this.productoForm).subscribe({
+          next: () => {
+            alert('Producto actualizado exitosamente');
+            this.cargarProductos();
+            this.limpiarFormulario();
+          },
+          error: (error) => {
+            console.error('Error:', error);
+            alert('Error al actualizar producto');
+          }
+        });
+      } else {
+        // Crear
+        this.adminService.crearProducto(this.productoForm).subscribe({
+          next: () => {
+            alert('Producto creado exitosamente');
+            this.cargarProductos();
+            this.limpiarFormulario();
+          },
+          error: (error) => {
+            console.error('Error:', error);
+            alert('Error al crear producto');
+          }
+        });
+      }
+    };
+
+    // Si hay archivo seleccionado, subirlo primero
+    if (this.selectedFile) {
+      this.adminService.uploadImage(this.selectedFile).subscribe({
+        next: (res: any) => {
+          // Se espera { imagen_url: 'http://...' }
+          if (res && res.imagen_url) {
+            this.productoForm.imagen_url = res.imagen_url;
+          }
+          proceedCreateOrEdit();
         },
-        error: (error) => {
-          console.error('Error:', error);
-          alert('Error al actualizar producto');
+        error: (err) => {
+          console.error('Error al subir imagen:', err);
+          alert('Error al subir la imagen. Intenta nuevamente.');
         }
       });
     } else {
-      // Crear
-      this.adminService.crearProducto(this.productoForm).subscribe({
-        next: () => {
-          alert('Producto creado exitosamente');
-          this.cargarProductos();
-          this.limpiarFormulario();
-        },
-        error: (error) => {
-          console.error('Error:', error);
-          alert('Error al crear producto');
-        }
-      });
+      // No hay archivo: proceder normalmente (usa productoForm.imagen_url si existe)
+      proceedCreateOrEdit();
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      // Preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.previewUrl = reader.result as string;
+      };
+      reader.readAsDataURL(file);
     }
   }
 

@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./db');
 const auth = require('./auth');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
@@ -10,6 +12,19 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads')); // Para servir imágenes
+
+// Configuración de multer para subida de imágenes
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `${uniqueSuffix}${ext}`);
+  }
+});
+const upload = multer({ storage: storage });
 
 // ============================================
 // ENDPOINT DE PRUEBA
@@ -66,6 +81,69 @@ app.get('/api/productos', (req, res) => {
       return res.status(500).json({ error: 'Error al obtener productos' });
     }
     res.json(results);
+  });
+});
+
+// ============================================
+// RUTAS ADMIN (CREAR / EDITAR / ELIMINAR PRODUCTOS + UPLOAD)
+// ============================================
+
+// Subir imagen (multipart/form-data) -> devuelve URL pública
+app.post('/api/admin/upload', auth.verifyAdmin, upload.single('imagen'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+
+  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({ imagen_url: imageUrl });
+});
+
+// Crear producto (JSON) - protegido
+app.post('/api/admin/productos', auth.verifyAdmin, (req, res) => {
+  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
+
+  const query = `
+    INSERT INTO productos (nombre, descripcion, precio, stock, categoria, talla, color, imagen_url, activo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+  `;
+  const values = [nombre, descripcion, precio, stock, categoria, talla, color, imagen_url || null];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Error al crear producto:', err);
+      return res.status(500).json({ error: 'Error al crear producto' });
+    }
+    res.status(201).json({ id: result.insertId, mensaje: 'Producto creado' });
+  });
+});
+
+// Editar producto - protegido
+app.put('/api/admin/productos/:id', auth.verifyAdmin, (req, res) => {
+  const { id } = req.params;
+  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
+
+  const query = `
+    UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ?, categoria = ?, talla = ?, color = ?, imagen_url = ? WHERE id = ?
+  `;
+  const values = [nombre, descripcion, precio, stock, categoria, talla, color, imagen_url || null, id];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Error al actualizar producto:', err);
+      return res.status(500).json({ error: 'Error al actualizar producto' });
+    }
+    res.json({ mensaje: 'Producto actualizado' });
+  });
+});
+
+// Eliminar producto (marcar inactivo) - protegido
+app.delete('/api/admin/productos/:id', auth.verifyAdmin, (req, res) => {
+  const { id } = req.params;
+  const query = 'UPDATE productos SET activo = FALSE WHERE id = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) {
+      console.error('Error al eliminar producto:', err);
+      return res.status(500).json({ error: 'Error al eliminar producto' });
+    }
+    res.json({ mensaje: 'Producto eliminado' });
   });
 });
 
