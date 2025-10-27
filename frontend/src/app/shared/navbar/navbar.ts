@@ -21,6 +21,7 @@ export class NavbarComponent implements OnInit {
     public carritoService: CarritoService  // público para usar en el template
   ) {}
 
+
   ngOnInit() {
     // Suscribirse al nombre del usuario
     this.authService.nombreUsuario$.subscribe(nombre => {

@@ -16,29 +16,30 @@ export class ProductosComponent implements OnInit {
   categoriaSeleccionada: string = 'Todos';
   categorias: string[] = ['Todos', 'Mujer', 'Hombre', 'Niños'];
 
-  constructor(
-    private productoService: ProductoService,
-    private carritoService: CarritoService
-  ) {}
+  constructor(private productoService: ProductoService) {}
 
   ngOnInit() {
     this.cargarProductos();
   }
 
   cargarProductos() {
+    this.isLoading = true;
     this.productoService.getProductos().subscribe({
       next: (data) => {
         this.productos = data;
+        this.isLoading = false;
         console.log('Productos cargados:', this.productos);
       },
       error: (error) => {
         console.error('Error al cargar productos:', error);
+        this.isLoading = false;
       }
     });
   }
 
   filtrarPorCategoria(categoria: string) {
     this.categoriaSeleccionada = categoria;
+    this.isLoading = true;
     
     if (categoria === 'Todos') {
       this.cargarProductos();
@@ -46,9 +47,11 @@ export class ProductosComponent implements OnInit {
       this.productoService.getProductosPorCategoria(categoria).subscribe({
         next: (data) => {
           this.productos = data;
+          this.isLoading = false;
         },
         error: (error) => {
           console.error('Error:', error);
+          this.isLoading = false;
         }
       });
     }
