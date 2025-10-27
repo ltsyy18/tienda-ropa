@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductoService } from '../../services/productos';
+import { CarritoService } from '../../services/carrito-service';
 import { NavbarComponent } from '../../shared/navbar/navbar';
 
 @Component({
@@ -18,7 +19,8 @@ export class ProductosComponent implements OnInit {
 
   constructor(
     private productoService: ProductoService,
-    private cd: ChangeDetectorRef // ✅ Agregado para actualizar vista
+    private cd: ChangeDetectorRef,
+    private carritoService: CarritoService
   ) {}
 
   ngOnInit() {
@@ -64,7 +66,7 @@ export class ProductosComponent implements OnInit {
   }
 
   agregarAlCarrito(producto: any) {
-    console.log('Agregar al carrito:', producto);
-    // TODO: Implementar lógica del carrito
+  this.carritoService.addItem(producto);
+  // TODO: Mostrar toast/notificación de éxito
   }
 }
