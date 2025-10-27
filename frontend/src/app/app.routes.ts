@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/auth/login/login';
 import { RegistroComponent } from './pages/auth/registro/registro';
 import { ProductosComponent } from './pages/productos/productos';
 import { CheckoutComponent } from './pages/checkout-component/checkout-component';
+import { PanelAdminComponent } from './pages/panel-admin/panel-admin';
 
 export const routes: Routes = [
   {
@@ -24,6 +25,12 @@ export const routes: Routes = [
     path: 'productos',
     component: ProductosComponent,
     title: 'Tienda | FashionStyle'
+  },
+  {
+    path: 'panel-admin',
+    component: PanelAdminComponent,
+    title: 'Panel de Administración | FashionStyle'
+
   },
   {
     path: 'checkout',

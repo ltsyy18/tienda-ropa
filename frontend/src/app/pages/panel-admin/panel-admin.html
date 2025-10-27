@@ -1,0 +1,143 @@
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <span class="navbar-brand mb-0 h1">
+      <i class="bi bi-shield-lock"></i> Panel de Administración
+    </span>
+    <button class="btn btn-outline-light btn-sm" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+    </button>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  
+  <!-- Formulario -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-plus-circle"></i> 
+        {{ modoEdicion ? 'Editar Producto' : 'Agregar Nuevo Producto' }}
+      </h5>
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="guardarProducto()">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" [(ngModel)]="productoForm.nombre" name="nombre" required>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" [(ngModel)]="productoForm.categoria" name="categoria">
+              <option *ngFor="let cat of categorias" [value]="cat">{{ cat }}</option>
+            </select>
+          </div>
+
+          <div class="col-md-12 mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" [(ngModel)]="productoForm.descripcion" name="descripcion" rows="2"></textarea>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Precio (S/)</label>
+            <input type="number" step="0.01" class="form-control" [(ngModel)]="productoForm.precio" name="precio" required>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Stock</label>
+            <input type="number" class="form-control" [(ngModel)]="productoForm.stock" name="stock" required>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Talla</label>
+            <input type="text" class="form-control" [(ngModel)]="productoForm.talla" name="talla" placeholder="Ej: M, L, 32">
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Color</label>
+            <input type="text" class="form-control" [(ngModel)]="productoForm.color" name="color">
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label">URL de Imagen</label>
+            <input type="url" class="form-control" [(ngModel)]="productoForm.imagen_url" name="imagen_url" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="limpiarFormulario()" *ngIf="modoEdicion">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabla de Productos -->
+  <div class="card">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-list-ul"></i> Lista de Productos
+      </h5>
+    </div>
+    <div class="card-body">
+      
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2">Cargando productos...</p>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!isLoading" class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Imagen</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Talla</th>
+              <th>Color</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let producto of productos">
+              <td>{{ producto.id }}</td>
+              <td>
+                <img [src]="producto.imagen_url" [alt]="producto.nombre" style="width: 50px; height: 50px; object-fit: cover;">
+              </td>
+              <td>{{ producto.nombre }}</td>
+              <td><span class="badge bg-info">{{ producto.categoria }}</span></td>
+              <td>S/ {{ producto.precio }}</td>
+              <td>{{ producto.stock }}</td>
+              <td>{{ producto.talla }}</td>
+              <td>{{ producto.color }}</td>
+              <td>
+                <button class="btn btn-sm btn-warning me-1" (click)="editarProducto(producto)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="eliminarProducto(producto.id)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p *ngIf="productos.length === 0" class="text-center text-muted">
+          No hay productos registrados
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+</div>

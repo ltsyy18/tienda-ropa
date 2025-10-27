@@ -134,4 +134,7 @@ export class AuthService {
     this.nombreUsuarioSubject.next('');
     this.router.navigate(['/login']);
   }
+  public getToken(): string | null {
+    return localStorage.getItem('authToken');
+  }
 }

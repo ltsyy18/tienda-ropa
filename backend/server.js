@@ -108,3 +108,71 @@ app.listen(PORT, () => {
   http://localhost:${PORT}
   `);
 });
+
+// ============================================
+// ADMIN - CRUD DE PRODUCTOS
+// ============================================
+
+// Crear nuevo producto (solo admin)
+app.post('/api/admin/productos', auth.verifyAdmin, (req, res) => {
+  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
+  
+  const query = `
+    INSERT INTO productos (nombre, descripcion, precio, stock, categoria, talla, color, imagen_url, activo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+  `;
+  
+  db.query(query, [nombre, descripcion, precio, stock, categoria, talla, color, imagen_url], (err, result) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Error al crear producto' });
+    }
+    res.status(201).json({ 
+      mensaje: 'Producto creado exitosamente', 
+      id: result.insertId 
+    });
+  });
+});
+
+// Editar producto (solo admin)
+app.put('/api/admin/productos/:id', auth.verifyAdmin, (req, res) => {
+  const { id } = req.params;
+  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
+  
+  const query = `
+    UPDATE productos 
+    SET nombre = ?, descripcion = ?, precio = ?, stock = ?, 
+        categoria = ?, talla = ?, color = ?, imagen_url = ?
+    WHERE id = ?
+  `;
+  
+  db.query(query, [nombre, descripcion, precio, stock, categoria, talla, color, imagen_url, id], (err, result) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Error al actualizar producto' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    res.json({ mensaje: 'Producto actualizado exitosamente' });
+  });
+});
+
+// Eliminar producto (solo admin)
+app.delete('/api/admin/productos/:id', auth.verifyAdmin, (req, res) => {
+  const { id } = req.params;
+  
+  // Soft delete: marcar como inactivo en vez de eliminar
+  const query = 'UPDATE productos SET activo = FALSE WHERE id = ?';
+  
+  db.query(query, [id], (err, result) => {
+    if (err) {
+      console.error('Error:', err);
+      return res.status(500).json({ error: 'Error al eliminar producto' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    res.json({ mensaje: 'Producto eliminado exitosamente' });
+  });
+});

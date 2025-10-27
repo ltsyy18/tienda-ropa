@@ -54,12 +54,16 @@ export class LoginComponent implements OnInit {
         this.isSubmitting = false;
         if (response) {
           console.log('Inicio de sesión exitoso. Redirigiendo...');
-          this.router.navigate(['/productos']); 
+          if (response.rol === 'admin') {
+          this.router.navigate(['/panel-admin']);
         } else {
-          // El servicio devolvió null, indicando error de credenciales o de conexión
-          this.errorMessage = 'Credenciales incorrectas o error de conexión. Inténtelo de nuevo.';
+          this.router.navigate(['/productos']);
         }
-      },
+        
+      } else {
+        this.errorMessage = 'Credenciales incorrectas o error de conexión. Inténtelo de nuevo.';
+      }
+    },
       error: () => {
         this.isSubmitting = false;
         this.errorMessage = 'Ocurrió un error en la conexión. Inténtelo más tarde.';
