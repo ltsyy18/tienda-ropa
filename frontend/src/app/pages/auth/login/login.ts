@@ -2,13 +2,13 @@ import { Component, inject, OnInit } from '@angular/core';
 import { AuthService } from '../../../services/auth';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   // Importamos CommonModule y FormsModule para usar ngIf, ngModel y ngSubmit
-  imports: [CommonModule, FormsModule], 
+  imports: [CommonModule, FormsModule,RouterLink], 
   templateUrl: './login.html',
   styleUrl: './login.css'
 })

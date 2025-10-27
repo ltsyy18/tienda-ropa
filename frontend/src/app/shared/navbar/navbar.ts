@@ -14,7 +14,7 @@ export class NavbarComponent implements OnInit {
   nombreUsuario: string = '';
   cantidadCarrito: number = 0;
 
-  constructor(private authService: AuthService) {}
+  constructor(public authService: AuthService) {}
 
   ngOnInit() {
     // Suscribirse al nombre del usuario
