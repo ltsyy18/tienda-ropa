@@ -8,23 +8,6 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav mx-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="#" (click)="$event.preventDefault()">Mujer</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#" (click)="$event.preventDefault()">Hombre</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#" (click)="$event.preventDefault()">Niños</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#" (click)="$event.preventDefault()">Ofertas</a>
-        </li>
-      </ul>
-    
-      
       <!-- SI ESTÁ LOGUEADO -->
       <div class="d-flex align-items-center gap-3" *ngIf="authService.isLoggedIn()">
         <span class="text-white">
@@ -51,7 +34,6 @@
         </a>
       </div>
       </div>
-  </div>
 </nav>
 
 <!-- Offcanvas del Carrito -->

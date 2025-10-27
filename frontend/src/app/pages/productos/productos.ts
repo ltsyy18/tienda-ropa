@@ -1,25 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductoService } from '../../services/productos';
 import { NavbarComponent } from '../../shared/navbar/navbar';
-import { CarritoService } from '../../services/carrito-service';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
   imports: [CommonModule, NavbarComponent],
   templateUrl: './productos.html',
-  styleUrl: './productos.css'
+  styleUrls: ['./productos.css'] // ✅ Corregido (antes decía styleUrl)
 })
 export class ProductosComponent implements OnInit {
   productos: any[] = [];
   categoriaSeleccionada: string = 'Todos';
   categorias: string[] = ['Todos', 'Mujer', 'Hombre', 'Niños'];
-  isLoading: boolean = false;
+  isLoading: boolean = true;
 
   constructor(
     private productoService: ProductoService,
-    private carritoService: CarritoService
+    private cd: ChangeDetectorRef // ✅ Agregado para actualizar vista
   ) {}
 
   ngOnInit() {
@@ -32,6 +31,7 @@ export class ProductosComponent implements OnInit {
       next: (data) => {
         this.productos = data;
         this.isLoading = false;
+        this.cd.detectChanges(); // ✅ fuerza actualización inmediata
         console.log('Productos cargados:', this.productos);
       },
       error: (error) => {
@@ -42,9 +42,10 @@ export class ProductosComponent implements OnInit {
   }
 
   filtrarPorCategoria(categoria: string) {
+    console.log('Categoría seleccionada:', categoria); // ✅ para depurar
     this.categoriaSeleccionada = categoria;
     this.isLoading = true;
-    
+
     if (categoria === 'Todos') {
       this.cargarProductos();
     } else {
@@ -52,9 +53,10 @@ export class ProductosComponent implements OnInit {
         next: (data) => {
           this.productos = data;
           this.isLoading = false;
+          this.cd.detectChanges(); // ✅ asegura refresco inmediato
         },
         error: (error) => {
-          console.error('Error:', error);
+          console.error('Error al filtrar por categoría:', error);
           this.isLoading = false;
         }
       });
@@ -62,7 +64,7 @@ export class ProductosComponent implements OnInit {
   }
 
   agregarAlCarrito(producto: any) {
-    this.carritoService.addItem(producto);
-    // TODO: Mostrar toast/notificación de éxito
+    console.log('Agregar al carrito:', producto);
+    // TODO: Implementar lógica del carrito
   }
 }
