@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/auth/login/login';
 import { RegistroComponent } from './pages/auth/registro/registro';
-import { ProductosComponent } from './pages/productos/productos';  // ← Sin .component
+import { ProductosComponent } from './pages/productos/productos';
+import { CheckoutComponent } from './pages/checkout-component/checkout-component';
 
 export const routes: Routes = [
   {
@@ -23,6 +24,11 @@ export const routes: Routes = [
     path: 'productos',
     component: ProductosComponent,
     title: 'Tienda | FashionStyle'
+  },
+  {
+    path: 'checkout',
+    component: CheckoutComponent,
+    title: 'Pago | FashionStyle'
   },
   {
     path: '**',

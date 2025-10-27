@@ -1,1 +1,67 @@
-<p>checkout-component works!</p>
+<div class="container py-5">
+	<div class="row justify-content-center">
+		<div class="col-lg-8">
+			<div class="card shadow-lg">
+				<div class="card-header bg-primary text-white">
+					<h3 class="mb-0"><i class="bi bi-credit-card"></i> Pago y Envío</h3>
+				</div>
+				<div class="card-body">
+					<!-- Resumen del carrito -->
+					<h5 class="mb-3">Resumen de tu compra</h5>
+					<ul class="list-group mb-4">
+						<!-- Aquí se debe iterar los items del carrito -->
+						<!-- Ejemplo estático, luego se conecta con el servicio -->
+						<li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let item of carritoService.getCart().items">
+							<div>
+								<strong>{{ item.nombre }}</strong>
+								<span class="badge bg-info ms-2">x{{ item.cantidad }}</span>
+							</div>
+							<span>S/ {{ item.precio * item.cantidad }}</span>
+						</li>
+					</ul>
+					<div class="d-flex justify-content-between mb-4">
+						<span class="fw-bold">Total a pagar:</span>
+						<span class="fw-bold text-success fs-5">S/ {{ carritoService.totalPrice() }}</span>
+					</div>
+					<!-- Formulario de datos de envío -->
+					  <form (ngSubmit)="onSubmitPago()">
+						<div class="mb-3">
+							<label for="nombre" class="form-label">Nombre completo</label>
+							<input type="text" class="form-control" id="nombre" placeholder="Tu nombre" required>
+						</div>
+						<div class="mb-3">
+							<label for="direccion" class="form-label">Dirección de envío</label>
+							<input type="text" class="form-control" id="direccion" placeholder="Calle, número, ciudad" required>
+						</div>
+						<div class="mb-3">
+							<label for="telefono" class="form-label">Teléfono</label>
+							<input type="tel" class="form-control" id="telefono" placeholder="Tu teléfono" required>
+						</div>
+						<!-- Métodos de pago -->
+						<div class="mb-4">
+							<label class="form-label">Método de pago</label>
+							<div class="form-check">
+								<input class="form-check-input" type="radio" name="pago" id="tarjeta" checked>
+								<label class="form-check-label" for="tarjeta">
+									<i class="bi bi-credit-card"></i> Tarjeta de crédito/débito
+								</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="radio" name="pago" id="efectivo">
+								<label class="form-check-label" for="efectivo">
+									<i class="bi bi-cash"></i> Pago en efectivo (contra entrega)
+								</label>
+							</div>
+						</div>
+									<button type="submit" class="btn btn-success w-100 py-2">
+										<i class="bi bi-check-circle"></i> Confirmar compra
+									</button>
+									<div *ngIf="mensajeExito" class="alert alert-success mt-4 text-center">
+										{{ mensajeExito }}
+									</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
