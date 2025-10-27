@@ -17,7 +17,7 @@ export class NavbarComponent implements OnInit {
 
 
   constructor(
-    private authService: AuthService,
+    public authService: AuthService,
     public carritoService: CarritoService  // público para usar en el template
   ) {}
 

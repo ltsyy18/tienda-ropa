@@ -15,8 +15,12 @@ export class ProductosComponent implements OnInit {
   productos: any[] = [];
   categoriaSeleccionada: string = 'Todos';
   categorias: string[] = ['Todos', 'Mujer', 'Hombre', 'Niños'];
+  isLoading: boolean = false;
 
-  constructor(private productoService: ProductoService) {}
+  constructor(
+    private productoService: ProductoService,
+    private carritoService: CarritoService
+  ) {}
 
   ngOnInit() {
     this.cargarProductos();

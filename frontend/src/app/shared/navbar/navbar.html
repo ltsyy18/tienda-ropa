@@ -28,13 +28,13 @@
       <!-- SI ESTÁ LOGUEADO -->
       <div class="d-flex align-items-center gap-3" *ngIf="authService.isLoggedIn()">
         <span class="text-white">
-          <i class="bi bi-person-circle">!Bienvenido </i> {{ nombreUsuario }} !
+          <i class="bi bi-person-circle"></i> ¡Bienvenido {{ nombreUsuario }}!
         </span>
         
         <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
           <i class="bi bi-cart3"></i> Carrito
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="cantidadCarrito > 0">
-            {{ cantidadCarrito }}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="carritoService.totalItems() > 0">
+            {{ carritoService.totalItems() }}
           </span>
         </button>
         
@@ -51,8 +51,7 @@
         </a>
       </div>
       </div>
-    </div>
-  
+  </div>
 </nav>
 
 <!-- Offcanvas del Carrito -->
