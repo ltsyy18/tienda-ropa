@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
+import { CarritoService } from '../../services/carrito-service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,7 +15,11 @@ export class NavbarComponent implements OnInit {
   nombreUsuario: string = '';
   cantidadCarrito: number = 0;
 
-  constructor(private authService: AuthService) {}
+
+  constructor(
+    private authService: AuthService,
+    public carritoService: CarritoService  // público para usar en el template
+  ) {}
 
   ngOnInit() {
     // Suscribirse al nombre del usuario
@@ -30,5 +35,14 @@ export class NavbarComponent implements OnInit {
 
   logout() {
     this.authService.logout();
+  }
+
+  // Helpers para el carrito
+  eliminarDelCarrito(id: number) {
+    this.carritoService.removeItem(id);
+  }
+
+  actualizarCantidad(id: number, cantidad: number) {
+    this.carritoService.updateQuantity(id, cantidad);
   }
 }

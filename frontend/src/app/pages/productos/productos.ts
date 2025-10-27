@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductoService } from '../../services/productos';
 import { NavbarComponent } from '../../shared/navbar/navbar';
+import { CarritoService } from '../../services/carrito-service';
 
 @Component({
   selector: 'app-productos',
@@ -15,7 +16,10 @@ export class ProductosComponent implements OnInit {
   categoriaSeleccionada: string = 'Todos';
   categorias: string[] = ['Todos', 'Mujer', 'Hombre', 'Niños'];
 
-  constructor(private productoService: ProductoService) {}
+  constructor(
+    private productoService: ProductoService,
+    private carritoService: CarritoService
+  ) {}
 
   ngOnInit() {
     this.cargarProductos();
@@ -51,7 +55,7 @@ export class ProductosComponent implements OnInit {
   }
 
   agregarAlCarrito(producto: any) {
-    console.log('Agregar al carrito:', producto);
-    // TODO: Implementar lógica del carrito
+    this.carritoService.addItem(producto);
+    // TODO: Mostrar toast/notificación de éxito
   }
 }

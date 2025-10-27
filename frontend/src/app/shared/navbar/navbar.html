@@ -54,6 +54,67 @@
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
   </div>
   <div class="offcanvas-body">
-    <p class="text-muted text-center">Tu carrito está vacío</p>
+    <!-- Lista de productos en el carrito -->
+    @if (carritoService.getCart().items.length > 0) {
+      <div class="cart-items">
+        @for (item of carritoService.getCart().items; track item.id) {
+          <div class="card mb-3">
+            <div class="row g-0">
+              <!-- Imagen del producto -->
+              <div class="col-4">
+                <img [src]="item.imagen_url || 'assets/no-image.png'" 
+                     [alt]="item.nombre"
+                     class="img-fluid rounded-start"
+                     style="height: 100px; object-fit: cover;">
+              </div>
+              <!-- Detalles del producto -->
+              <div class="col-8">
+                <div class="card-body p-2">
+                  <h6 class="card-title mb-1">{{ item.nombre }}</h6>
+                  <p class="card-text mb-1">
+                    <small class="text-muted">Precio: S/ {{ item.precio }}</small>
+                  </p>
+                  <!-- Control de cantidad -->
+                  <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-primary" 
+                            (click)="actualizarCantidad(item.id, item.cantidad - 1)">-</button>
+                    <span>{{ item.cantidad }}</span>
+                    <button class="btn btn-sm btn-outline-primary"
+                            (click)="actualizarCantidad(item.id, item.cantidad + 1)">+</button>
+                    <button class="btn btn-sm btn-outline-danger ms-auto" 
+                            (click)="eliminarDelCarrito(item.id)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+        
+        <!-- Total y botón de checkout -->
+        <div class="border-top pt-3 mt-3">
+          <div class="d-flex justify-content-between mb-2">
+            <span>Total Items:</span>
+            <strong>{{ carritoService.totalItems() }}</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-3">
+            <span>Total:</span>
+            <strong>S/ {{ carritoService.totalPrice() }}</strong>
+          </div>
+          <a routerLink="/checkout" class="btn btn-primary w-100" data-bs-dismiss="offcanvas">
+            Continuar con la compra
+          </a>
+        </div>
+      </div>
+    } @else {
+      <div class="text-center py-5">
+        <i class="bi bi-cart3 fs-1 text-muted"></i>
+        <p class="text-muted mt-3">Tu carrito está vacío</p>
+        <a routerLink="/productos" class="btn btn-outline-primary" data-bs-dismiss="offcanvas">
+          Ver productos
+        </a>
+      </div>
+    }
   </div>
 </div>
