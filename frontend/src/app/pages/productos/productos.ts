@@ -9,7 +9,7 @@ import { NavbarComponent } from '../../shared/navbar/navbar';
   standalone: true,
   imports: [CommonModule, NavbarComponent],
   templateUrl: './productos.html',
-  styleUrls: ['./productos.css'] // ✅ Corregido (antes decía styleUrl)
+  styleUrls: ['./productos.css'] 
 })
 export class ProductosComponent implements OnInit {
   productos: any[] = [];
@@ -33,7 +33,7 @@ export class ProductosComponent implements OnInit {
       next: (data) => {
         this.productos = data;
         this.isLoading = false;
-        this.cd.detectChanges(); // ✅ fuerza actualización inmediata
+        this.cd.detectChanges(); 
         console.log('Productos cargados:', this.productos);
       },
       error: (error) => {
@@ -44,7 +44,7 @@ export class ProductosComponent implements OnInit {
   }
 
   filtrarPorCategoria(categoria: string) {
-    console.log('Categoría seleccionada:', categoria); // ✅ para depurar
+    console.log('Categoría seleccionada:', categoria); //  para depurar
     this.categoriaSeleccionada = categoria;
     this.isLoading = true;
 
@@ -55,7 +55,7 @@ export class ProductosComponent implements OnInit {
         next: (data) => {
           this.productos = data;
           this.isLoading = false;
-          this.cd.detectChanges(); // ✅ asegura refresco inmediato
+          this.cd.detectChanges(); //  asegura refresco inmediato
         },
         error: (error) => {
           console.error('Error al filtrar por categoría:', error);
