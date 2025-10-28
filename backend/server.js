@@ -4,6 +4,7 @@ const db = require('./db');
 const auth = require('./auth');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
@@ -12,11 +13,21 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads')); // Para servir imágenes
+app.use('/comprobantes', express.static('comprobantes')); // Para servir comprobantes
+
+// Las tablas relacionadas con pedidos, detalle_pedidos y pagos se
+// asumen ya creadas en la base de datos (no las creamos desde el servidor).
 
 // Configuración de multer para subida de imágenes
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    // Si es un comprobante, va a la carpeta comprobantes
+    const folder = file.fieldname === 'comprobante' ? 'comprobantes' : 'uploads';
+    // Crear la carpeta si no existe
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, { recursive: true });
+    }
+    cb(null, folder);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -176,6 +187,143 @@ app.get('/api/productos/categoria/:categoria', (req, res) => {
     }
     res.json(results);
   });
+});
+
+// ============================================
+// PEDIDOS (Checkout)
+// ============================================
+// Crear un pedido y decrementar stock en transacción
+app.post('/api/pedidos', (req, res) => {
+  const userId = req.user?.id || 1; // Temporal: si no hay usuario autenticado, usamos ID 1
+  const { cliente, items, total, metodoPago, numeroOperacion, comprobanteUrl } = req.body;
+
+  if (!cliente || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ mensaje: 'Datos de pedido inválidos' });
+  }
+
+  db.query('START TRANSACTION', async (err) => {
+    if (err) {
+      console.error('Error iniciando transacción:', err);
+      return res.status(500).json({ mensaje: 'Error interno' });
+    }
+
+    // Generar código de seguimiento único
+    const codigoSeguimiento = 'PED-' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 4).toUpperCase();
+
+    const pedidoQuery = `
+      INSERT INTO pedidos (
+        usuario_id, 
+        codigo_seguimiento, 
+        total, 
+        direccion_envio, 
+        metodo_compra
+      ) VALUES (?, ?, ?, ?, ?)
+    `;
+    const pedidoValues = [
+      userId,
+      codigoSeguimiento,
+      total,
+      cliente.direccion,
+      'invitado'
+    ];
+
+    db.query(pedidoQuery, pedidoValues, (err, result) => {
+      if (err) {
+        console.error('Error insertando pedido:', err);
+        return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al crear pedido' }));
+      }
+
+      const pedidoId = result.insertId;
+
+      // Insertar el pago
+      const pagoQuery = `
+        INSERT INTO pagos (
+          pedido_id,
+          monto,
+          metodo_pago,
+          numero_operacion,
+          comprobante_url,
+          estado
+        ) VALUES (?, ?, ?, ?, ?, 'pendiente')
+      `;
+      
+      db.query(pagoQuery, [pedidoId, total, metodoPago, numeroOperacion, comprobanteUrl], (err) => {
+        if (err) {
+          console.error('Error insertando pago:', err);
+          return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al registrar el pago' }));
+        }
+
+        const processItem = (index) => {
+          if (index >= items.length) {
+            return db.query('COMMIT', (err) => {
+              if (err) {
+                console.error('Error en commit:', err);
+                return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al confirmar pedido' }));
+              }
+              return res.status(201).json({ 
+                pedidoId, 
+                codigoSeguimiento,
+                mensaje: 'Pedido creado correctamente' 
+              });
+            });
+          }
+
+          const it = items[index];
+          const productoId = it.producto_id || it.id || it.productoId;
+          const cantidad = it.cantidad;
+          const precio = it.precio || it.precio_unitario || 0;
+          const subtotal = (precio * cantidad).toFixed(2);
+
+          // Verificar y actualizar stock
+          const updateStockQuery = 'UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?';
+          db.query(updateStockQuery, [cantidad, productoId, cantidad], (err, updateResult) => {
+            if (err) {
+              console.error('Error actualizando stock:', err);
+              return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al actualizar stock' }));
+            }
+
+            if (updateResult.affectedRows === 0) {
+              return db.query('ROLLBACK', () => res.status(409).json({ mensaje: `Stock insuficiente para el producto ${productoId}` }));
+            }
+
+            // Insertar detalle del pedido
+            const detalleQuery = `
+              INSERT INTO detalle_pedidos (
+                pedido_id,
+                producto_id,
+                cantidad,
+                precio_unitario,
+                subtotal
+              ) VALUES (?, ?, ?, ?, ?)
+            `;
+            
+            db.query(detalleQuery, [pedidoId, productoId, cantidad, precio, subtotal], (err) => {
+              if (err) {
+                console.error('Error insertando detalle_pedido:', err);
+                return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al insertar detalle' }));
+              }
+
+              processItem(index + 1);
+            });
+          });
+        };
+
+        processItem(0);
+      });
+    });
+  });
+});
+
+// ============================================
+// SUBIDA DE COMPROBANTES
+// ============================================
+app.post('/api/upload-comprobante', upload.single('comprobante'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo' });
+  }
+
+  const comprobanteUrl = `${req.protocol}://${req.get('host')}/comprobantes/${req.file.filename}`;
+  res.json({ url: comprobanteUrl });
 });
 
 // ============================================

@@ -1,0 +1,36 @@
+.qr-card {
+    max-width: 300px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.qr-container {
+    padding: 1rem;
+    text-align: center;
+}
+
+.qr-image {
+    max-width: 200px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.payment-info {
+    text-align: center;
+    padding: 1rem;
+}
+
+.payment-amount {
+    color: #28a745;
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+}
+
+.store-name {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
