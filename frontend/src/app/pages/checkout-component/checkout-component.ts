@@ -237,7 +237,7 @@ export class CheckoutComponent implements OnInit {
     doc.setFontSize(24);
     doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'bold');
-    doc.text('🛍️ FashionStyle', 105, 20, { align: 'center' });
+    doc.text(' FashionStyle', 105, 20, { align: 'center' });
     
     // Línea decorativa
     doc.setDrawColor(0, 0, 0);
@@ -341,7 +341,7 @@ export class CheckoutComponent implements OnInit {
     });
 
     // ==========================================
-    // TOTAL (sin línea de separación)
+    // TOTAL 
     // ==========================================
     y += 8;
     
