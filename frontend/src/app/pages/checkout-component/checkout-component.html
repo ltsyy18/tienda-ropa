@@ -1,113 +1,227 @@
 <div class="container py-5">
-	<div class="row justify-content-center">
-		<div class="col-lg-8">
-			<div class="card shadow-lg">
-				<div class="card-header bg-primary text-white">
-					<h3 class="mb-0"><i class="bi bi-credit-card"></i> Pago y Envío</h3>
-				</div>
-				<div class="card-body">
-					<!-- Resumen del carrito -->
-					<h5 class="mb-3">Resumen de tu compra</h5>
-					<ul class="list-group mb-4">
-						<!-- Aquí se debe iterar los items del carrito -->
-						<!-- Ejemplo estático, luego se conecta con el servicio -->
-						<li class="list-group-item d-flex justify-content-between align-items-center" *ngFor="let item of carritoService.getCart().items">
-							<div>
-								<strong>{{ item.nombre }}</strong>
-								<span class="badge bg-info ms-2">x{{ item.cantidad }}</span>
-							</div>
-							<span>S/ {{ item.precio * item.cantidad }}</span>
-						</li>
-					</ul>
-					<div class="d-flex justify-content-between mb-4">
-						<span class="fw-bold">Total a pagar:</span>
-						<span class="fw-bold text-success fs-5">S/ {{ carritoService.totalPrice() }}</span>
-					</div>
-					<!-- Formulario de datos de envío -->
-								<form (ngSubmit)="onSubmitPago()">
-									<div class="mb-3">
-										<label for="nombre" class="form-label">Nombre completo</label>
-										<input type="text" class="form-control" id="nombre" name="nombre" [(ngModel)]="nombre" placeholder="Tu nombre" required>
-									</div>
-									<div class="mb-3">
-										<label for="direccion" class="form-label">Dirección de envío</label>
-										<input type="text" class="form-control" id="direccion" name="direccion" [(ngModel)]="direccion" placeholder="Calle, número, ciudad" required>
-									</div>
-									<div class="mb-3">
-										<label for="telefono" class="form-label">Teléfono</label>
-										<input type="tel" class="form-control" id="telefono" name="telefono" [(ngModel)]="telefono" placeholder="Tu teléfono" required>
-									</div>
-						<!-- Métodos de pago -->
-						<div class="mb-4">
-							<label class="form-label">Método de pago</label>
-							<div class="form-check">
-								<input class="form-check-input" type="radio" name="pago" id="yape" [(ngModel)]="metodoPago" value="yape" checked>
-								<label class="form-check-label" for="yape">
-									<i class="bi bi-phone"></i> Yape
-								</label>
-							</div>
-						</div>
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0"><i class="bi bi-credit-card"></i> Pago y Envío</h3>
+        </div>
+        <div class="card-body">
+          <!-- Resumen del carrito -->
+          <h5 class="mb-3">Resumen de tu compra</h5>
+          <ul class="list-group mb-4">
+            <!-- Aquí se debe iterar los items del carrito -->
+            <!-- Ejemplo estático, luego se conecta con el servicio -->
+            <li
+              class="list-group-item d-flex justify-content-between align-items-center"
+              *ngFor="let item of carritoService.getCart().items"
+            >
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <span class="badge bg-info ms-2">x{{ item.cantidad }}</span>
+              </div>
+              <span>S/ {{ item.precio * item.cantidad }}</span>
+            </li>
+          </ul>
+          <div class="d-flex justify-content-between mb-4">
+            <span class="fw-bold">Total a pagar:</span>
+            <span class="fw-bold text-success fs-5">S/ {{ carritoService.totalPrice() }}</span>
+          </div>
+          <!-- Formulario de datos de envío -->
+          <form (ngSubmit)="onSubmitPago()">
+            <div class="mb-3">
+              <label for="dni" class="form-label">DNI</label>
+              <input
+                type="text"
+                class="form-control"
+                id="dni"
+                name="dni"
+                [(ngModel)]="dni"
+                [readOnly]="isLoggedIn"
+                pattern="[0-9]{8}"
+                minlength="8"
+                maxlength="8"
+                placeholder="Ingresa tu DNI (8 dígitos)"
+                [class.is-invalid]="formErrors['dni']"
+                required
+              />
+              <div class="invalid-feedback" *ngIf="formErrors['dni']">
+                {{ formErrors['dni'] }}
+              </div>
+              <small class="text-muted">Solo números, 8 dígitos exactos</small>
+            </div>
 
-						<!-- QR de Yape -->
-						<div class="mb-4 text-center" *ngIf="metodoPago === 'yape'">
-							<div class="card qr-card">
-								<h5 class="card-title text-center pt-3">Escanea para pagar</h5>
-								<div class="qr-container">
-									<img src="img/qr-yape.svg" alt="QR Yape" class="qr-image">
-								</div>
-								<div class="payment-info">
-									<div class="payment-amount">S/ {{ carritoService.totalPrice() }}</div>
-									<div class="store-name">Tienda de Ropa</div>
-								</div>
-							</div>
-						</div>
-						
-						<!-- Número de operación -->
-						<div class="mb-3" *ngIf="metodoPago === 'yape'">
-							<label for="numeroOperacion" class="form-label">Número de operación Yape</label>
-							<input type="text" class="form-control" id="numeroOperacion" name="numeroOperacion" [(ngModel)]="numeroOperacion" placeholder="Ingresa el número de operación" required>
-							<small class="text-muted">Ingresa el número que aparece en tu app de Yape después de realizar el pago</small>
-						</div>
+            <div class="mb-3">
+  <label for="nombres" class="form-label">Nombres</label>
+  <input type="text" 
+         class="form-control" 
+         id="nombres" 
+         name="nombres" 
+         [(ngModel)]="nombres" 
+         [readonly]="isLoggedIn"
+         pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+         placeholder="Tus nombres" 
+         [class.is-invalid]="formErrors['nombres']"
+         required>
+  <div class="invalid-feedback" *ngIf="formErrors['nombres']">
+    {{ formErrors['nombres'] }}
+  </div>
+  <small class="text-muted" *ngIf="isLoggedIn">
+    <i class="bi bi-lock"></i> Este dato está protegido
+  </small>
+</div>
 
-						<!-- Comprobante de pago -->
-						<div class="mb-3" *ngIf="metodoPago === 'yape'">
-							<label for="comprobante" class="form-label">Captura de pantalla del pago (opcional)</label>
-							<input type="file" class="form-control" id="comprobante" (change)="onFileSelected($event)" accept="image/*">
-							<small class="text-muted">Puedes adjuntar una captura de la confirmación de tu pago</small>
-						</div>
-										<button type="submit" class="btn btn-success w-100 py-2" [disabled]="isProcessing">
-											<i class="bi bi-check-circle"></i>
-											<span *ngIf="!isProcessing">Confirmar compra</span>
-											<span *ngIf="isProcessing">Procesando...</span>
-										</button>
-										<!-- Mensaje de error -->
-										<div *ngIf="mensajeError" class="alert alert-danger mt-4 text-center">
-											{{ mensajeError }}
-										</div>
+            <div class="mb-3">
+              <label for="apellidos" class="form-label">Apellidos</label>
+              <input
+                type="text"
+                class="form-control"
+                id="apellidos"
+                name="apellidos"
+                [(ngModel)]="apellidos"
+                [readonly]="isLoggedIn"
+                pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+                placeholder="Tus apellidos"
+                [class.is-invalid]="formErrors['apellidos']"
+                required
+              />
+              <div class="invalid-feedback" *ngIf="formErrors['apellidos']">
+                {{ formErrors['apellidos'] }}
+              </div>
+              <small class="text-muted" *ngIf="isLoggedIn">
+                <i class="bi bi-lock"></i> Este dato está protegido
+              </small>
+            </div>
 
-										<!-- Mensaje de éxito y botones de acción -->
-										<div *ngIf="orderResult" class="text-center mt-4">
-											<div class="alert alert-success mb-4">
-												<i class="bi bi-check-circle-fill me-2"></i>
-												{{ mensajeExito }}
-											</div>
-											
-											<!-- Botones de acción -->
-											<div class="d-flex justify-content-center gap-3 flex-wrap">
-												<button type="button" class="btn btn-outline-primary" (click)="printVoucher()">
-													<i class="bi bi-printer"></i> Imprimir comprobante
-												</button>
-												<button type="button" class="btn btn-outline-secondary" (click)="downloadVoucher()">
-													<i class="bi bi-download"></i> Descargar comprobante
-												</button>
-												<button type="button" class="btn btn-success" (click)="volverAProductos()">
-													<i class="bi bi-arrow-left-circle"></i> Seguir comprando
-												</button>
-											</div>
-										</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
+            <!-- Teléfono -->
+            <div class="mb-3">
+              <label for="telefono" class="form-label">Teléfono</label>
+              <input
+                type="tel"
+                class="form-control"
+                id="telefono"
+                name="telefono"
+                [(ngModel)]="telefono"
+                [readonly]="isLoggedIn"
+                placeholder="Tu teléfono"
+                required
+              />
+              <small class="text-muted" *ngIf="isLoggedIn">
+                <i class="bi bi-lock"></i> Este dato está protegido
+              </small>
+            </div>
+
+            <div class="mb-3">
+              <label for="direccion" class="form-label">Dirección de envío</label>
+              <input
+                type="text"
+                class="form-control"
+                id="direccion"
+                name="direccion"
+                [(ngModel)]="direccion"
+                placeholder="Calle, número, ciudad"
+                required
+              />
+            </div>
+
+            <!-- Métodos de pago -->
+            <div class="mb-4">
+              <label class="form-label">Método de pago</label>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="pago"
+                  id="yape"
+                  [(ngModel)]="metodoPago"
+                  value="yape"
+                  checked
+                />
+                <label class="form-check-label" for="yape">
+                  <i class="bi bi-phone"></i> Yape
+                </label>
+              </div>
+            </div>
+
+            <!-- QR de Yape -->
+            <div class="mb-4 text-center" *ngIf="metodoPago === 'yape'">
+              <div class="card qr-card">
+                <h5 class="card-title text-center pt-3">Escanea para pagar</h5>
+                <div class="qr-container">
+                  <img src="img/qr-yape.svg" alt="QR Yape" class="qr-image" />
+                </div>
+                <div class="payment-info">
+                  <div class="payment-amount">S/ {{ carritoService.totalPrice() }}</div>
+                  <div class="store-name">Tienda de Ropa</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Número de operación -->
+            <div class="mb-3" *ngIf="metodoPago === 'yape'">
+              <label for="numeroOperacion" class="form-label">Número de operación Yape</label>
+              <input
+                type="text"
+                class="form-control"
+                id="numeroOperacion"
+                name="numeroOperacion"
+                [(ngModel)]="numeroOperacion"
+                placeholder="Ingresa el número de operación"
+                required
+              />
+              <small class="text-muted"
+                >Ingresa el número que aparece en tu app de Yape después de realizar el pago</small
+              >
+            </div>
+
+            <!-- Comprobante de pago -->
+            <div class="mb-3" *ngIf="metodoPago === 'yape'">
+              <label for="comprobante" class="form-label"
+                >Captura de pantalla del pago (opcional)</label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="comprobante"
+                (change)="onFileSelected($event)"
+                accept="image/*"
+              />
+              <small class="text-muted"
+                >Puedes adjuntar una captura de la confirmación de tu pago</small
+              >
+            </div>
+            <button type="submit" class="btn btn-success w-100 py-2" [disabled]="isProcessing">
+              <i class="bi bi-check-circle"></i>
+              <span *ngIf="!isProcessing">Confirmar compra</span>
+              <span *ngIf="isProcessing">Procesando...</span>
+            </button>
+            <!-- Mensaje de error -->
+            <div *ngIf="mensajeError" class="alert alert-danger mt-4 text-center">
+              {{ mensajeError }}
+            </div>
+
+            <!-- Mensaje de éxito y botones de acción -->
+            <div *ngIf="orderResult" class="text-center mt-4">
+              <div class="alert alert-success mb-4">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                {{ mensajeExito }}
+              </div>
+
+              <!-- Botones de acción -->
+              <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <button type="button" class="btn btn-outline-primary" (click)="printVoucher()">
+                  <i class="bi bi-printer"></i> Imprimir comprobante
+                </button>
+                <button type="button" class="btn btn-outline-secondary" (click)="downloadVoucher()">
+                  <i class="bi bi-download"></i> Descargar comprobante
+                </button>
+                <button type="button" class="btn btn-success" (click)="volverAProductos()">
+                  <i class="bi bi-arrow-left-circle"></i> Seguir comprando
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

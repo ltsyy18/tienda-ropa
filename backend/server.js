@@ -192,10 +192,11 @@ app.get('/api/productos/categoria/:categoria', (req, res) => {
 // ============================================
 // PEDIDOS (Checkout)
 // ============================================
-// Crear un pedido y decrementar stock en transacción
 app.post('/api/pedidos', (req, res) => {
-  const userId = req.user?.id || 1; // Temporal: si no hay usuario autenticado, usamos ID 1
-  const { cliente, items, total, metodoPago, numeroOperacion, comprobanteUrl } = req.body;
+  const { userId, cliente, items, total, metodoPago, numeroOperacion, comprobanteUrl } = req.body;
+
+  // Usar el userId enviado desde el frontend
+  const finalUserId = userId || 1; // Si no viene, usar 1 como fallback
 
   if (!cliente || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ mensaje: 'Datos de pedido inválidos' });
@@ -207,7 +208,6 @@ app.post('/api/pedidos', (req, res) => {
       return res.status(500).json({ mensaje: 'Error interno' });
     }
 
-    // Generar código de seguimiento único
     const codigoSeguimiento = 'PED-' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 4).toUpperCase();
 
     const pedidoQuery = `
@@ -220,11 +220,11 @@ app.post('/api/pedidos', (req, res) => {
       ) VALUES (?, ?, ?, ?, ?)
     `;
     const pedidoValues = [
-      userId,
+      finalUserId,  // ← CAMBIO AQUÍ
       codigoSeguimiento,
       total,
       cliente.direccion,
-      'invitado'
+      userId ? 'con_cuenta' : 'invitado'  // ← CAMBIO: Si tiene userId es con cuenta
     ];
 
     db.query(pedidoQuery, pedidoValues, (err, result) => {
@@ -235,7 +235,6 @@ app.post('/api/pedidos', (req, res) => {
 
       const pedidoId = result.insertId;
 
-      // Insertar el pago
       const pagoQuery = `
         INSERT INTO pagos (
           pedido_id,
@@ -274,7 +273,6 @@ app.post('/api/pedidos', (req, res) => {
           const precio = it.precio || it.precio_unitario || 0;
           const subtotal = (precio * cantidad).toFixed(2);
 
-          // Verificar y actualizar stock
           const updateStockQuery = 'UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?';
           db.query(updateStockQuery, [cantidad, productoId, cantidad], (err, updateResult) => {
             if (err) {
@@ -286,7 +284,6 @@ app.post('/api/pedidos', (req, res) => {
               return db.query('ROLLBACK', () => res.status(409).json({ mensaje: `Stock insuficiente para el producto ${productoId}` }));
             }
 
-            // Insertar detalle del pedido
             const detalleQuery = `
               INSERT INTO detalle_pedidos (
                 pedido_id,

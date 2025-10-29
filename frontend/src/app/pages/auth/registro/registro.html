@@ -1,5 +1,3 @@
-
-<!-- Plantilla de Registro de FashionStyle, adaptada del Login -->
 <div class="login-container">
     <div class="fashion-header">
         <div class="logo">🛍️ FashionStyle</div>
@@ -7,48 +5,106 @@
         <p>Regístrate para acceder a los mejores descuentos</p>
     </div>
 
-    <!-- Formulario de Angular: usa ngSubmit para llamar a la función en el .ts -->
     <form (ngSubmit)="handleRegister()" class="login-form">
         
-        <!-- Nombre y Apellido en línea para mejor UI -->
+       
+
+        <!-- Nombre y Apellido -->
         <div class="input-group-row">
             <div class="input-group">
-                <label for="nombre">Nombre</label>
-                <!-- Enlace de datos con ngModel -->
-                <input type="text" id="nombre" name="nombre" [(ngModel)]="nombre" required placeholder="Tu Nombre">
+                <label for="nombre">Nombre <span class="text-danger">*</span></label>
+                <input 
+                    type="text" 
+                    id="nombre" 
+                    name="nombre" 
+                    [(ngModel)]="nombre"
+                    (input)="onNombreInput($event)"
+                    placeholder="Juan"
+                    required>
             </div>
             <div class="input-group">
-                <label for="apellido">Apellido</label>
-                <input type="text" id="apellido" name="apellido" [(ngModel)]="apellido" required placeholder="Tu Apellido">
+                <label for="apellido">Apellido <span class="text-danger">*</span></label>
+                <input 
+                    type="text" 
+                    id="apellido" 
+                    name="apellido" 
+                    [(ngModel)]="apellido"
+                    (input)="onApellidoInput($event)"
+                    placeholder="Pérez"
+                    required>
             </div>
         </div>
 
+         <!-- DNI -->
         <div class="input-group">
-            <label for="email">Correo electrónico</label>
-            <input type="email" id="email" name="email" [(ngModel)]="email" required placeholder="tu@email.com">
+            <label for="dni">DNI <span class="text-danger">*</span></label>
+            <input 
+                type="text" 
+                id="dni" 
+                name="dni" 
+                [(ngModel)]="dni"
+                (input)="onDNIInput($event)"
+                maxlength="8"
+                placeholder="12345678"
+                required>
+            <small class="text-muted">Ingrese exactamente 8 dígitos</small>
         </div>
 
+        <!-- Email -->
         <div class="input-group">
-            <label for="telefono">Teléfono</label>
-            <input type="tel" id="telefono" name="telefono" [(ngModel)]="telefono" required placeholder="+51 987 654 321">
+            <label for="email">Correo electrónico <span class="text-danger">*</span></label>
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                [(ngModel)]="email"
+                placeholder="tu@email.com"
+                required>
+            <small class="text-muted">Debe contener @</small>
         </div>
 
+        <!-- Teléfono -->
         <div class="input-group">
-            <label for="password">Contraseña</label>
-            <!-- Usamos [type] para cambiar entre 'password' y 'text' -->
-            <input [type]="passwordInputType" id="password" name="password" [(ngModel)]="password" required placeholder="••••••••">
-            <!-- Llamamos a la función togglePassword() en el .ts -->
+            <label for="telefono">Teléfono <span class="text-danger">*</span></label>
+            <input 
+                type="tel" 
+                id="telefono" 
+                name="telefono" 
+                [(ngModel)]="telefono"
+                (input)="onTelefonoInput($event)"
+                maxlength="9"
+                placeholder="987654321"
+                required>
+            <small class="text-muted">Ingrese exactamente 9 dígitos</small>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="input-group">
+            <label for="password">Contraseña <span class="text-danger">*</span></label>
+            <input 
+                [type]="passwordInputType" 
+                id="password" 
+                name="password" 
+                [(ngModel)]="password"
+                minlength="6"
+                placeholder="••••••••"
+                required>
             <span class="toggle-password" (click)="togglePassword()">
                 {{ passwordInputType === 'password' ? '👁️' : '🔒' }}
             </span>
+            <small class="text-muted">Mínimo 6 caracteres</small>
         </div>
 
-        <!-- Mensajes de Estado (Éxito o Error) -->
+        <!-- Mensajes -->
         @if (errorMessage) {
-            <div class="notification error">{{ errorMessage }}</div>
+            <div class="notification error">
+                <i class="bi bi-exclamation-triangle"></i> {{ errorMessage }}
+            </div>
         }
         @if (successMessage) {
-            <div class="notification success">{{ successMessage }}</div>
+            <div class="notification success">
+                <i class="bi bi-check-circle"></i> {{ successMessage }}
+            </div>
         }
 
         <button type="submit" class="login-btn" [disabled]="isSubmitting">
@@ -58,7 +114,6 @@
 
     <div class="register-link">
         ¿Ya tienes cuenta? 
-        <!-- routerLink para navegación de Angular -->
         <a [routerLink]="['/login']">Inicia Sesión aquí</a>
     </div>
 </div>

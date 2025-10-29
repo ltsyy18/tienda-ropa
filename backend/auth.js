@@ -35,7 +35,7 @@ const login = (req, res) => {
         }
         
         // 2. Si no es admin (o contraseña incorrecta), intentar buscar como USUARIO (cliente)
-        const userQuery = 'SELECT id, email, password, nombre FROM usuarios WHERE email = ? AND tipo = "registrado"';
+        const userQuery = 'SELECT id, email, password, nombre, apellido FROM usuarios WHERE email = ? AND tipo = "registrado"';
         // Solo permitimos el login a usuarios de tipo 'registrado' (los 'invitados' no tienen contraseña)
 
         db.query(userQuery, [email], (err, userResults) => {
@@ -50,8 +50,8 @@ const login = (req, res) => {
                 // Contraseña de texto plano (según confirmación del usuario)
                 if (password === user.password) {
                     // Generar Token JWT con rol 'cliente'
-                    const token = jwt.sign({ id: user.id, email: user.email, role: 'cliente', nombre: user.nombre }, JWT_SECRET, { expiresIn: '1d' });
-                    return res.status(200).json({ token, rol: 'cliente', nombre: user.nombre, mensaje: `Bienvenido, cliente ${user.nombre}.` });
+                    const token = jwt.sign({ id: user.id, email: user.email, role: 'cliente', nombre: user.nombre, apellido:user.apellido }, JWT_SECRET, { expiresIn: '1d' });
+                    return res.status(200).json({ token, rol: 'cliente', nombre: user.nombre,apellido:user.apellido, mensaje: `Bienvenido, cliente ${user.nombre}.` });
                 }
             }
             
@@ -65,7 +65,7 @@ const login = (req, res) => {
 const register = (req, res) => {
     const { dni, nombre, apellido, email, password, telefono, direccion } = req.body;
 
-    if (!nombre || !email || !password ) {
+if (!dni || !nombre || !email || !password) {
         return res.status(400).json({ mensaje: 'Los campos Nombre, Email y Contraseña son obligatorios.' });
     }
 

@@ -10,6 +10,7 @@ interface AuthResponse {
   token: string;
   rol: string;
   nombre?: string;
+  apellido?: string;
   mensaje: string;
 }
 
@@ -37,70 +38,107 @@ export class AuthService {
   /**
    * Login de usuario (admin o cliente)
    */
-  login(email: string, password: string): Observable<AuthResponse | null> {
-    const body = { email, password };
+login(email: string, password: string): Observable<AuthResponse | null> {
+  const body = { email, password };
 
-    return this.http.post<AuthResponse>(`${API_URL}/login`, body).pipe(
-      map(response => {
-        if (response.token) {
-          localStorage.setItem('authToken', response.token);
-          localStorage.setItem('rol', response.rol);
-          localStorage.setItem('nombre', response.nombre || 'Usuario');
-          
-          this.isAuthenticated = true;
-          this.nombreUsuarioSubject.next(response.nombre || 'Usuario');
-          
-          return response;
-        }
-        return null;
-      }),
-      catchError(error => {
-        console.error('Login failed:', error);
-        this.isAuthenticated = false;
-        return of(null);
-      })
-    );
+  return this.http.post<AuthResponse>(`${API_URL}/login`, body).pipe(
+    map(response => {
+      if (response.token) {
+        // Decodificar token para obtener el ID
+        const decoded = this.decodeToken(response.token);
+        
+        // Guardar datos en localStorage
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('userId', decoded?.id || ''); 
+        localStorage.setItem('rol', response.rol);
+        localStorage.setItem('nombre', response.nombre || 'Usuario');
+        localStorage.setItem('apellido', response.apellido || ''); 
+        localStorage.setItem('email', decoded?.email || ''); 
+        
+        
+        this.isAuthenticated = true;
+        this.nombreUsuarioSubject.next(response.nombre || 'Usuario');
+        
+        return response;
+      }
+      return null;
+    }),
+    catchError(error => {
+      console.error('Login failed:', error);
+      this.isAuthenticated = false;
+      return of(null);
+    })
+  );
+}
+
+/**
+ * Decodificar token JWT
+ */
+private decodeToken(token: string): any {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload));
+  } catch (e) {
+    return null;
   }
+}
+
+/**
+ * Obtener ID del usuario
+ */
+public getUserId(): number | null {
+  const id = localStorage.getItem('userId');
+  return id ? parseInt(id) : null;
+}
 
   /**
    * Registro SIN DNI (solo nombre, apellido, email, teléfono, password)
    */
   register(
-    nombre: string,
-    apellido: string,
-    email: string,
-    telefono: string,
-    password: string
-  ): Observable<AuthResponse | null> {
-    const body = { 
-      nombre, 
-      apellido, 
-      email, 
-      telefono, 
-      password,
-      dni: null // Enviamos null, el backend lo acepta
-    };
+  dni: string,          
+  nombre: string,
+  apellido: string,
+  email: string,
+  telefono: string,
+  password: string
+): Observable<AuthResponse | null> {
+  const body = { 
+    dni,                
+    nombre, 
+    apellido, 
+    email, 
+    telefono, 
+    password 
+  };
 
-    return this.http.post<AuthResponse>(`${API_URL}/register`, body).pipe(
-      map(response => {
-        if (response.token) {
-          localStorage.setItem('authToken', response.token);
-          localStorage.setItem('rol', response.rol);
-          localStorage.setItem('nombre', response.nombre || nombre);
-          
-          this.isAuthenticated = true;
-          this.nombreUsuarioSubject.next(response.nombre || nombre);
-          
-          return response;
-        }
-        return null;
-      }),
-      catchError(error => {
-        console.error('Registration failed:', error);
-        return of(null);
-      })
-    );
-  }
+  return this.http.post<AuthResponse>(`${API_URL}/register`, body).pipe(
+    map(response => {
+      if (response.token) {
+
+        const decoded = this.decodeToken(response.token);
+
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('userId', decoded?.id || ''); 
+        localStorage.setItem('rol', response.rol);
+        localStorage.setItem('nombre', response.nombre || nombre);
+        localStorage.setItem('email', decoded?.email || '');
+        localStorage.setItem('dni',dni);
+        localStorage.setItem('telefono',telefono);
+
+
+        this.isAuthenticated = true;
+        this.nombreUsuarioSubject.next(response.nombre || nombre);
+        
+        return response;
+      }
+      return null;
+    }),
+    catchError(error => {
+      console.error('Registration failed:', error);
+      return of(null);
+    })
+  );
+}
 
   /**
    * Verificar si está autenticado
