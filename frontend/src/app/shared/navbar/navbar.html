@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" routerLink="/productos">
       <i class="bi bi-bag-fill"></i> FashionStyle
@@ -8,11 +8,13 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     
-      <!-- SI ESTÁ LOGUEADO -->
-      <div class="d-flex align-items-center gap-3" *ngIf="authService.isLoggedIn()">
-        <span class="text-white">
-          <i class="bi bi-person-circle"></i> ¡Bienvenido {{ nombreUsuario }}!
-        </span>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="ms-auto">
+        <!-- SI ESTÁ LOGUEADO -->
+        <div class="d-flex align-items-center gap-3" *ngIf="authService.isLoggedIn()">
+          <span class="text-white">
+            <i class="bi bi-person-circle"></i> ¡Bienvenido {{ nombreUsuario }}!
+          </span>
         
         <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
           <i class="bi bi-cart3"></i> Carrito
@@ -24,16 +26,18 @@
         <button class="btn btn-sm btn-outline-danger" (click)="logout()">
           <i class="bi bi-box-arrow-right"></i> Salir
         </button>
-      </div>
+        </div>
 
-      <!-- SI NO ESTÁ LOGUEADO -->
-      <div *ngIf="!authService.isLoggedIn()">
-        <i class="text-white text-center p-3">¿No tiene cuenta?</i>
-        <a routerLink="/login" class="btn btn-primary">
-          <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
-        </a>
+        <!-- SI NO ESTÁ LOGUEADO -->
+        <div *ngIf="!authService.isLoggedIn()">
+          <i class="text-white text-center p-3">¿No tiene cuenta?</i>
+          <a routerLink="/login" class="btn btn-primary">
+            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+          </a>
+        </div>
       </div>
-      </div>
+    </div>
+  </div>
 </nav>
 
 <!-- Offcanvas del Carrito -->
@@ -42,7 +46,7 @@
     <h5 class="offcanvas-title">
       <i class="bi bi-cart3"></i> Mi Carrito
     </h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" title="Cerrar carrito" aria-label="Cerrar"></button>
   </div>
   <div class="offcanvas-body">
     <!-- Lista de productos en el carrito -->
@@ -55,8 +59,8 @@
               <div class="col-4">
                 <img [src]="item.imagen_url || 'assets/no-image.png'" 
                      [alt]="item.nombre"
-                     class="img-fluid rounded-start"
-                     style="height: 100px; object-fit: cover;">
+                     [title]="item.nombre"
+                     class="img-fluid rounded-start product-image">
               </div>
               <!-- Detalles del producto -->
               <div class="col-8">

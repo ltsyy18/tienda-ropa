@@ -5,6 +5,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CarritoService } from '../../services/carrito-service';
 import { AuthService } from '../../services/auth';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-checkout-component',
@@ -20,6 +21,20 @@ export class CheckoutComponent implements OnInit {
   mensajeError: string = '';
   isProcessing: boolean = false;
   isLoggedIn: boolean = false;
+
+  private qrImageUrl: string = 'assets/qr-yape.svg';
+  private qrError: boolean = false;
+  private fallbackQrSvg: string = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+      <rect width="100%" height="100%" fill="#f8f9fa"/>
+      <text x="100" y="90" text-anchor="middle" font-family="Arial" font-size="14">
+        QR Yape
+      </text>
+      <text x="100" y="110" text-anchor="middle" font-family="Arial" font-size="12">
+        (Vista previa)
+      </text>
+    </svg>
+  `;
 
   dni: string = '';
   nombres: string = '';
@@ -44,8 +59,17 @@ export class CheckoutComponent implements OnInit {
   constructor(
     private router: Router,
     public carritoService: CarritoService,
-    private http: HttpClient
-  ) {}
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
+  ) {
+    // Intentar precargar la imagen del QR
+    const img = new Image();
+    img.onerror = () => {
+      console.warn('QR image not found, using embedded SVG');
+      this.qrError = true;
+    };
+    img.src = this.qrImageUrl;
+  }
 
   ngOnInit() {
     // Verificar si está logueado
@@ -55,8 +79,14 @@ export class CheckoutComponent implements OnInit {
       // Pre-llenar datos del usuario logueado
       this.dni = localStorage.getItem('dni') || '';
       this.nombres = localStorage.getItem('nombre') || '';
-      // Si no tienes apellido guardado, dejarlo vacío
-      this.apellidos = localStorage.getItem('apellido') || '';
+        // Obtenemos el apellido y verificamos que exista
+        const apellidoGuardado = localStorage.getItem('apellido');
+        if (apellidoGuardado) {
+          this.apellidos = apellidoGuardado;
+          console.log('Apellido cargado:', this.apellidos);
+        } else {
+          console.warn('No se encontró apellido guardado');
+        }
       this.telefono = localStorage.getItem('telefono') || '';
       // Dirección dejala editable
     }
@@ -472,7 +502,7 @@ export class CheckoutComponent implements OnInit {
         </head>
         <body>
           <div class="header">
-            <h1>🛍️ TIENDA DE ROPA</h1>
+            <h1>🛍️ FashionStyle</h1>
             <h2>Comprobante de Pedido</h2>
             <p><strong>Código:</strong> ${order.codigoSeguimiento || ''}</p>
             <p><small>${fecha}</small></p>
@@ -505,11 +535,19 @@ export class CheckoutComponent implements OnInit {
 
           <div style="margin-top: 40px; text-align: center; color: #666;">
             <p>Gracias por tu compra</p>
-            <p><small>www.tiendaropa.com</small></p>
+            <p><small>www.fashionstyle.com</small></p>
           </div>
         </body>
       </html>
     `;
+  }
+
+  getQRUrl(): SafeUrl {
+    if (this.qrError) {
+      const encoded = btoa(this.fallbackQrSvg);
+      return this.sanitizer.bypassSecurityTrustUrl('data:image/svg+xml;base64,' + encoded);
+    }
+    return this.sanitizer.bypassSecurityTrustUrl(this.qrImageUrl);
   }
 
   volverAProductos() {

@@ -51,8 +51,9 @@ login(email: string, password: string): Observable<AuthResponse | null> {
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('userId', decoded?.id || ''); 
         localStorage.setItem('rol', response.rol);
-        localStorage.setItem('nombre', response.nombre || 'Usuario');
-        localStorage.setItem('apellido', response.apellido || ''); 
+          // Asegurarnos de guardar nombre y apellido solo si vienen en la respuesta
+          if (response.nombre) localStorage.setItem('nombre', response.nombre);
+          if (response.apellido) localStorage.setItem('apellido', response.apellido);
         localStorage.setItem('email', decoded?.email || ''); 
         
         
@@ -120,11 +121,12 @@ public getUserId(): number | null {
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('userId', decoded?.id || ''); 
         localStorage.setItem('rol', response.rol);
-        localStorage.setItem('nombre', response.nombre || nombre);
+    // Asegurarnos de guardar nombre y apellido proporcionados por el usuario
+    localStorage.setItem('nombre', nombre);
+    localStorage.setItem('apellido', apellido);
         localStorage.setItem('email', decoded?.email || '');
-        localStorage.setItem('dni',dni);
-        localStorage.setItem('telefono',telefono);
-
+        localStorage.setItem('dni', dni);
+        localStorage.setItem('telefono', telefono);
 
         this.isAuthenticated = true;
         this.nombreUsuarioSubject.next(response.nombre || nombre);
