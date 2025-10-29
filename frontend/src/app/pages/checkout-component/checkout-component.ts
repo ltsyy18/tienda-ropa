@@ -209,60 +209,183 @@ export class CheckoutComponent implements OnInit {
   }
 
   async downloadVoucher() {
-    const html = this.generateVoucherHtml();
-    const code = this.orderResult?.codigoSeguimiento || 'pedido';
+  const code = this.orderResult?.codigoSeguimiento || 'pedido';
+  
+  const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
 
-    // Crear contenedor temporal
-    const container = document.createElement('div');
-    container.style.width = '800px';
-    container.style.padding = '20px';
-    container.style.background = '#fff';
-    container.innerHTML = html;
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    document.body.appendChild(container);
+  try {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    
+    const jsPDF = (window as any).jspdf.jsPDF;
+    const doc = new jsPDF();
 
-    const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
-      if ((window as any).html2pdf) return resolve();
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = () => resolve();
-      s.onerror = reject;
-      document.head.appendChild(s);
+    const snap = this.orderSnapshot || {};
+    const order = this.orderResult || {};
+    const cliente = snap.cliente || {};
+    const items = snap.items || [];
+
+    // ==========================================
+    // ENCABEZADO
+    // ==========================================
+    doc.setFontSize(24);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('🛍️ FashionStyle', 105, 20, { align: 'center' });
+    
+    // Línea decorativa
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(20, 25, 190, 25);
+
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'normal');
+    doc.text('Comprobante de Pedido', 105, 35, { align: 'center' });
+
+    // Código y fecha
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Código: ${order.codigoSeguimiento || 'N/A'}`, 105, 43, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text(`Fecha: ${new Date().toLocaleString('es-PE', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 105, 49, { align: 'center' });
+
+    // ==========================================
+    // DATOS DEL CLIENTE
+    // ==========================================
+    let y = 60;
+    
+    // Borde de la sección
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(20, y, 170, 30);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('DATOS DEL CLIENTE', 22, y + 6);
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Cliente: ${cliente.nombre_completo || 'N/A'}`, 22, y + 13);
+    doc.text(`DNI: ${cliente.dni || 'N/A'}`, 22, y + 19);
+    doc.text(`Teléfono: ${cliente.telefono || 'N/A'}`, 110, y + 13);
+    doc.text(`Dirección: ${cliente.direccion || 'N/A'}`, 22, y + 25);
+
+    // ==========================================
+    // TABLA DE PRODUCTOS
+    // ==========================================
+    y = 95;
+    
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('DETALLE DE PRODUCTOS', 22, y);
+    
+    y += 5;
+    
+    // Encabezados de la tabla
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, y, 170, 8, 'F');
+    doc.rect(20, y, 170, 8, 'S'); // Borde
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    
+    // Encabezados centrados correctamente
+    doc.text('Producto', 22, y + 5.5);
+    doc.text('Cantidad', 120, y + 5.5, { align: 'center' });
+    doc.text('P. Unitario', 152, y + 5.5, { align: 'center' });
+    doc.text('Subtotal', 180, y + 5.5, { align: 'center' });
+    
+    y += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+
+    // Items de la tabla
+    let totalGeneral = 0;
+    items.forEach((item: any, index: number) => {
+      if (y > 260) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      const nombre = item.nombre || 'Producto';
+      const cantidad = item.cantidad;
+      const precio = Number(item.precio);
+      const subtotal = precio * cantidad;
+      totalGeneral += subtotal;
+
+      // Fila con borde
+      doc.rect(20, y, 170, 7, 'S');
+
+      const nombreCorto = nombre.length > 40 ? nombre.substring(0, 37) + '...' : nombre;
+      
+      doc.text(nombreCorto, 22, y + 4.5);
+      doc.text(cantidad.toString(), 120, y + 4.5, { align: 'center' });
+      doc.text(`S/ ${precio.toFixed(2)}`, 152, y + 4.5, { align: 'center' });
+      doc.text(`S/ ${subtotal.toFixed(2)}`, 180, y + 4.5, { align: 'center' });
+      
+      y += 7;
     });
 
-    try {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+    // ==========================================
+    // TOTAL (sin línea de separación)
+    // ==========================================
+    y += 8;
+    
+    // Recuadro del total
+    doc.setLineWidth(0.5);
+    doc.rect(130, y - 5, 60, 10, 'S');
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text(`TOTAL: S/ ${Number(snap.total || 0).toFixed(2)}`, 160, y + 2, { align: 'center' });
 
-      const opt = {
-        margin: 10,
-        filename: `comprobante_${code}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true,
-          letterRendering: true 
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+    // ==========================================
+    // FOOTER
+    // ==========================================
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    
+    const footerY = 275;
+    doc.text('¡Gracias por tu compra!', 105, footerY, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text('www.fashionstyle.com | contacto@fashionstyle.com', 105, footerY + 5, { align: 'center' });
 
-      await (window as any).html2pdf().set(opt).from(container).save();
-    } catch (e) {
-      console.error('Error al generar PDF:', e);
-      // Fallback: descargar HTML
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `comprobante_${code}.html`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } finally {
-      container.remove();
-    }
+    // ==========================================
+    // GUARDAR PDF
+    // ==========================================
+    doc.save(`comprobante_${code}.pdf`);
+    
+    this.mensajeExito = '¡Comprobante PDF descargado correctamente! ✅';
+    
+    setTimeout(() => {
+      this.mensajeExito = '';
+    }, 3000);
+    
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    this.mensajeError = 'Error al generar el PDF. Por favor, intenta imprimir el comprobante.';
+    
+    setTimeout(() => {
+      this.mensajeError = '';
+    }, 5000);
   }
+}
 
   private generateVoucherHtml(): string {
     const order = this.orderResult || {};
