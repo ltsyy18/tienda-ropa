@@ -8,6 +8,7 @@ import { AuthService } from './auth';
 })
 export class AdminService {
   private apiUrl = 'http://localhost:3000/api/admin';
+  private pedidosUrl = 'http://localhost:3000/api/pedidos';
 
   constructor(
     private http: HttpClient,
@@ -21,6 +22,10 @@ export class AdminService {
       'Authorization': `Bearer ${token}`
     });
   }
+
+  // ==========================================
+  // PRODUCTOS
+  // ==========================================
 
   // Crear producto
   crearProducto(producto: any): Observable<any> {
@@ -48,6 +53,33 @@ export class AdminService {
   // Eliminar producto
   eliminarProducto(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/productos/${id}`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // ==========================================
+  // PEDIDOS
+  // ==========================================
+
+  // Obtener todos los pedidos
+  obtenerPedidos(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/pedidos`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // Actualizar estado de pedido
+  actualizarEstadoPedido(pedidoId: number, nuevoEstado: string): Observable<any> {
+    return this.http.put(
+      `${this.apiUrl}/pedidos/${pedidoId}/estado`,
+      { estado: nuevoEstado },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Obtener detalles de un pedido
+  obtenerDetallePedido(pedidoId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/pedidos/${pedidoId}`, {
       headers: this.getHeaders()
     });
   }

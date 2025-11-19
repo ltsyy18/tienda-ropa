@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { ProductoService } from '../../services/productos';
 import { AdminService } from '../../services/admin';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-panel-admin',
@@ -15,7 +16,10 @@ import { AdminService } from '../../services/admin';
 })
 export class PanelAdminComponent implements OnInit {
   productos: any[] = [];
+  pedidos: any[] = [];
   isLoading: boolean = true;
+  isLoadingPedidos: boolean = true;
+  mostrarFormulario: boolean = false; // ← NUEVO
   modoEdicion: boolean = false;
   selectedFile: File | null = null;
   previewUrl: string | null = null;
@@ -35,6 +39,14 @@ export class PanelAdminComponent implements OnInit {
 
   categorias = ['Mujer', 'Hombre', 'Niños'];
 
+  // Estadísticas
+  stats = {
+    totalProductos: 0,
+    totalPedidos: 0,
+    ventasTotal: 0,
+    pedidosPendientes: 0
+  };
+
   constructor(
     private authService: AuthService,
     private productoService: ProductoService,
@@ -50,14 +62,44 @@ export class PanelAdminComponent implements OnInit {
       return;
     }
 
-    this.cargarProductos();
+    this.cargarDatos();
+  }
+
+  cargarDatos() {
+    this.isLoading = true;
+    this.isLoadingPedidos = true;
+
+    // Cargar productos y pedidos en paralelo
+    forkJoin({
+      productos: this.productoService.getProductos(),
+      pedidos: this.adminService.obtenerPedidos()
+    }).subscribe({
+      next: (result) => {
+        this.productos = result.productos || [];
+        this.pedidos = result.pedidos || [];
+        
+        this.calcularEstadisticas();
+        
+        this.isLoading = false;
+        this.isLoadingPedidos = false;
+      },
+      error: (error) => {
+        console.error('Error cargando datos:', error);
+        this.isLoading = false;
+        this.isLoadingPedidos = false;
+        
+        // Si falla pedidos, al menos mostrar productos
+        this.cargarProductos();
+      }
+    });
   }
 
   cargarProductos() {
     this.isLoading = true;
     this.productoService.getProductos().subscribe({
       next: (data) => {
-        this.productos = data;
+        this.productos = data || [];
+        this.calcularEstadisticas();
         this.isLoading = false;
       },
       error: (error) => {
@@ -65,6 +107,23 @@ export class PanelAdminComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  calcularEstadisticas() {
+    this.stats.totalProductos = this.productos.length;
+    this.stats.totalPedidos = this.pedidos.length;
+    this.stats.ventasTotal = this.pedidos.reduce((sum, p) => sum + parseFloat(p.total || 0), 0);
+    this.stats.pedidosPendientes = this.pedidos.filter(p => p.estado === 'pendiente').length;
+  }
+
+  // ========================================
+  // TOGGLE FORMULARIO
+  // ========================================
+  toggleFormulario() {
+    this.mostrarFormulario = !this.mostrarFormulario;
+    if (!this.mostrarFormulario) {
+      this.limpiarFormulario();
+    }
   }
 
   limpiarFormulario() {
@@ -90,26 +149,28 @@ export class PanelAdminComponent implements OnInit {
         // Editar
         this.adminService.editarProducto(this.productoForm.id, this.productoForm).subscribe({
           next: () => {
-            alert('Producto actualizado exitosamente');
+            alert('✅ Producto actualizado exitosamente');
             this.cargarProductos();
             this.limpiarFormulario();
+            this.mostrarFormulario = false; // ← CERRAR FORMULARIO
           },
           error: (error) => {
             console.error('Error:', error);
-            alert('Error al actualizar producto');
+            alert('❌ Error al actualizar producto');
           }
         });
       } else {
         // Crear
         this.adminService.crearProducto(this.productoForm).subscribe({
           next: () => {
-            alert('Producto creado exitosamente');
+            alert('✅ Producto creado exitosamente');
             this.cargarProductos();
             this.limpiarFormulario();
+            this.mostrarFormulario = false; // ← CERRAR FORMULARIO
           },
           error: (error) => {
             console.error('Error:', error);
-            alert('Error al crear producto');
+            alert('❌ Error al crear producto');
           }
         });
       }
@@ -119,7 +180,6 @@ export class PanelAdminComponent implements OnInit {
     if (this.selectedFile) {
       this.adminService.uploadImage(this.selectedFile).subscribe({
         next: (res: any) => {
-          // Se espera { imagen_url: 'http://...' }
           if (res && res.imagen_url) {
             this.productoForm.imagen_url = res.imagen_url;
           }
@@ -127,11 +187,10 @@ export class PanelAdminComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error al subir imagen:', err);
-          alert('Error al subir la imagen. Intenta nuevamente.');
+          alert('❌ Error al subir la imagen. Intenta nuevamente.');
         }
       });
     } else {
-      // No hay archivo: proceder normalmente (usa productoForm.imagen_url si existe)
       proceedCreateOrEdit();
     }
   }
@@ -140,7 +199,6 @@ export class PanelAdminComponent implements OnInit {
     const file = event.target.files && event.target.files[0];
     if (file) {
       this.selectedFile = file;
-      // Preview
       const reader = new FileReader();
       reader.onload = () => {
         this.previewUrl = reader.result as string;
@@ -152,6 +210,7 @@ export class PanelAdminComponent implements OnInit {
   editarProducto(producto: any) {
     this.productoForm = { ...producto };
     this.modoEdicion = true;
+    this.mostrarFormulario = true; // ← ABRIR FORMULARIO
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -159,15 +218,42 @@ export class PanelAdminComponent implements OnInit {
     if (confirm('¿Estás seguro de eliminar este producto?')) {
       this.adminService.eliminarProducto(id).subscribe({
         next: () => {
-          alert('Producto eliminado exitosamente');
+          alert('✅ Producto eliminado exitosamente');
           this.cargarProductos();
         },
         error: (error) => {
           console.error('Error:', error);
-          alert('Error al eliminar producto');
+          alert('❌ Error al eliminar producto');
         }
       });
     }
+  }
+
+  // ========================================
+  // GESTIÓN DE PEDIDOS
+  // ========================================
+  cambiarEstadoPedido(pedidoId: number, nuevoEstado: string) {
+    this.adminService.actualizarEstadoPedido(pedidoId, nuevoEstado).subscribe({
+      next: () => {
+        alert('✅ Estado del pedido actualizado');
+        this.cargarDatos();
+      },
+      error: (error) => {
+        console.error('Error:', error);
+        alert('❌ Error al actualizar estado');
+      }
+    });
+  }
+
+  getEstadoColor(estado: string): string {
+    const colores: any = {
+      'pendiente': 'warning',
+      'procesando': 'info',
+      'enviado': 'primary',
+      'entregado': 'success',
+      'cancelado': 'danger'
+    };
+    return colores[estado] || 'secondary';
   }
 
   logout() {

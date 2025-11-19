@@ -16,13 +16,6 @@
             <i class="bi bi-person-circle"></i> ¡Bienvenido {{ nombreUsuario }}!
           </span>
         
-        <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
-          <i class="bi bi-cart3"></i> Carrito
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="carritoService.totalItems() > 0">
-            {{ carritoService.totalItems() }}
-          </span>
-        </button>
-        
         <button class="btn btn-sm btn-outline-danger" (click)="logout()">
           <i class="bi bi-box-arrow-right"></i> Salir
         </button>
@@ -35,6 +28,12 @@
             <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
           </a>
         </div>
+        <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
+          <i class="bi bi-cart3"></i> Carrito
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="carritoService.totalItems() > 0">
+            {{ carritoService.totalItems() }}
+          </span>
+        </button>
       </div>
     </div>
   </div>

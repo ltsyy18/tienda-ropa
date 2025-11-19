@@ -1,40 +1,23 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
 const auth = require('./auth');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
+// Cliente de Supabase para Storage (importado desde db.js)
+const supabase = db.supabase;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads')); // Para servir imágenes
-app.use('/comprobantes', express.static('comprobantes')); // Para servir comprobantes
 
-// Las tablas relacionadas con pedidos, detalle_pedidos y pagos se
-// asumen ya creadas en la base de datos (no las creamos desde el servidor).
-
-// Configuración de multer para subida de imágenes
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Si es un comprobante, va a la carpeta comprobantes
-    const folder = file.fieldname === 'comprobante' ? 'comprobantes' : 'uploads';
-    // Crear la carpeta si no existe
-    if (!fs.existsSync(folder)) {
-      fs.mkdirSync(folder, { recursive: true });
-    }
-    cb(null, folder);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
-  }
-});
+// Configuración de multer para subida temporal
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ============================================
@@ -42,293 +25,448 @@ const upload = multer({ storage: storage });
 // ============================================
 app.get('/', (req, res) => {
   res.json({ 
-    mensaje: '🚀 Servidor funcionando correctamente',
-    fecha: new Date()
+    mensaje: '🚀 Servidor FashionStyle funcionando con Supabase',
+    fecha: new Date(),
+    database: 'PostgreSQL (Supabase)'
   });
 });
 
 // ============================================
 // AUTENTICACIÓN Y REGISTRO
 // ============================================
-// Ruta ÚNICA de Login (Admin y Cliente)
 app.post('/api/auth/login', auth.login); 
-
-// Nueva Ruta para el Registro de Clientes
 app.post('/api/auth/register', auth.register); 
 
-// Ruta Protegida de Prueba (Solo para Administradores)
 app.get('/api/admin/dashboard', auth.verifyAdmin, (req, res) => {
-    res.json({ 
-        mensaje: `✅ Acceso Concedido al Dashboard. Usuario: ${req.user.email}`,
-        userId: req.user.id 
-    });
+  res.json({ 
+    mensaje: `✅ Acceso Concedido al Dashboard. Usuario: ${req.user.email}`,
+    userId: req.user.id 
+  });
 });
 
-// Ruta Protegida de Prueba (Solo para Clientes, usando el middleware base)
 app.get('/api/cliente/perfil', auth.verifyToken, (req, res) => {
-    if (req.user.role !== 'cliente') {
-         return res.status(403).json({ mensaje: 'Acceso prohibido. Solo para clientes.' });
-    }
-    res.json({
-        mensaje: `Hola ${req.user.nombre}, bienvenido a tu perfil de cliente.`,
-        datos: req.user
-    });
+  if (req.user.role !== 'cliente') {
+    return res.status(403).json({ mensaje: 'Acceso prohibido. Solo para clientes.' });
+  }
+  res.json({
+    mensaje: `Hola ${req.user.nombre}, bienvenido a tu perfil de cliente.`,
+    datos: req.user
+  });
 });
 
-
-
-
 // ============================================
-// PRODUCTOS
+// PRODUCTOS - PÚBLICOS
 // ============================================
+app.get('/api/productos', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .select('*')
+      .eq('activo', true)
+      .order('fecha_agregado', { ascending: false });
 
-// Obtener todos los productos
-app.get('/api/productos', (req, res) => {
-  const query = 'SELECT * FROM productos WHERE activo = TRUE';
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error obteniendo productos:', error);
+    res.status(500).json({ error: 'Error al obtener productos' });
+  }
+});
+
+app.get('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
   
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error:', err);
-      return res.status(500).json({ error: 'Error al obtener productos' });
-    }
-    res.json(results);
-  });
-});
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-// ============================================
-// RUTAS ADMIN (CREAR / EDITAR / ELIMINAR PRODUCTOS + UPLOAD)
-// ============================================
-
-// Subir imagen (multipart/form-data) -> devuelve URL pública
-app.post('/api/admin/upload', auth.verifyAdmin, upload.single('imagen'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
-
-  const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.json({ imagen_url: imageUrl });
-});
-
-// Crear producto (JSON) - protegido
-app.post('/api/admin/productos', auth.verifyAdmin, (req, res) => {
-  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
-
-  const query = `
-    INSERT INTO productos (nombre, descripcion, precio, stock, categoria, talla, color, imagen_url, activo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
-  `;
-  const values = [nombre, descripcion, precio, stock, categoria, talla, color, imagen_url || null];
-
-  db.query(query, values, (err, result) => {
-    if (err) {
-      console.error('Error al crear producto:', err);
-      return res.status(500).json({ error: 'Error al crear producto' });
-    }
-    res.status(201).json({ id: result.insertId, mensaje: 'Producto creado' });
-  });
-});
-
-// Editar producto - protegido
-app.put('/api/admin/productos/:id', auth.verifyAdmin, (req, res) => {
-  const { id } = req.params;
-  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
-
-  const query = `
-    UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ?, categoria = ?, talla = ?, color = ?, imagen_url = ? WHERE id = ?
-  `;
-  const values = [nombre, descripcion, precio, stock, categoria, talla, color, imagen_url || null, id];
-
-  db.query(query, values, (err, result) => {
-    if (err) {
-      console.error('Error al actualizar producto:', err);
-      return res.status(500).json({ error: 'Error al actualizar producto' });
-    }
-    res.json({ mensaje: 'Producto actualizado' });
-  });
-});
-
-// Eliminar producto (marcar inactivo) - protegido
-app.delete('/api/admin/productos/:id', auth.verifyAdmin, (req, res) => {
-  const { id } = req.params;
-  const query = 'UPDATE productos SET activo = FALSE WHERE id = ?';
-  db.query(query, [id], (err, result) => {
-    if (err) {
-      console.error('Error al eliminar producto:', err);
-      return res.status(500).json({ error: 'Error al eliminar producto' });
-    }
-    res.json({ mensaje: 'Producto eliminado' });
-  });
-});
-
-// Obtener un producto por ID
-app.get('/api/productos/:id', (req, res) => {
-  const { id } = req.params;
-  const query = 'SELECT * FROM productos WHERE id = ?';
-  
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error('Error:', err);
-      return res.status(500).json({ error: 'Error al obtener producto' });
-    }
-    if (results.length === 0) {
+    if (error) throw error;
+    if (!data) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
-    res.json(results[0]);
-  });
+    res.json(data);
+  } catch (error) {
+    console.error('Error obteniendo producto:', error);
+    res.status(500).json({ error: 'Error al obtener producto' });
+  }
 });
 
-// Obtener productos por categoría
-app.get('/api/productos/categoria/:categoria', (req, res) => {
+app.get('/api/productos/categoria/:categoria', async (req, res) => {
   const { categoria } = req.params;
-  const query = 'SELECT * FROM productos WHERE categoria = ? AND activo = TRUE';
   
-  db.query(query, [categoria], (err, results) => {
-    if (err) {
-      console.error('Error:', err);
-      return res.status(500).json({ error: 'Error al obtener productos' });
-    }
-    res.json(results);
-  });
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .select('*')
+      .eq('categoria', categoria)
+      .eq('activo', true);
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error obteniendo productos por categoría:', error);
+    res.status(500).json({ error: 'Error al obtener productos' });
+  }
 });
 
 // ============================================
-// PEDIDOS (Checkout)
+// ADMIN - SUBIR IMAGEN A SUPABASE STORAGE
 // ============================================
-app.post('/api/pedidos', (req, res) => {
+app.post('/api/admin/upload', auth.verifyAdmin, upload.single('imagen'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo' });
+  }
+
+  try {
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+
+    // Subir imagen a Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('productos')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error subiendo a Supabase Storage:', error);
+      return res.status(500).json({ error: 'Error al subir imagen: ' + error.message });
+    }
+
+    // Obtener URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from('productos')
+      .getPublicUrl(fileName);
+
+    res.json({ imagen_url: publicUrlData.publicUrl });
+  } catch (error) {
+    console.error('Error procesando imagen:', error);
+    res.status(500).json({ error: 'Error al procesar imagen' });
+  }
+});
+
+// ============================================
+// ADMIN - CREAR PRODUCTO
+// ============================================
+app.post('/api/admin/productos', auth.verifyAdmin, async (req, res) => {
+  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .insert({
+        nombre,
+        descripcion,
+        precio: parseFloat(precio),
+        stock: parseInt(stock),
+        categoria,
+        talla,
+        color,
+        imagen_url: imagen_url || null,
+        activo: true
+      })
+      .select();
+
+    if (error) {
+      console.error('Error creando producto:', error);
+      return res.status(500).json({ error: 'Error al crear producto: ' + error.message });
+    }
+
+    res.status(201).json({ 
+      id: data[0].id,
+      mensaje: 'Producto creado exitosamente',
+      producto: data[0]
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al crear producto' });
+  }
+});
+
+// ============================================
+// ADMIN - EDITAR PRODUCTO
+// ============================================
+app.put('/api/admin/productos/:id', auth.verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { nombre, descripcion, precio, stock, categoria, talla, color, imagen_url } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .update({
+        nombre,
+        descripcion,
+        precio: parseFloat(precio),
+        stock: parseInt(stock),
+        categoria,
+        talla,
+        color,
+        imagen_url: imagen_url || null
+      })
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error actualizando producto:', error);
+      return res.status(500).json({ error: 'Error al actualizar producto: ' + error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    res.json({ 
+      mensaje: 'Producto actualizado exitosamente',
+      producto: data[0]
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al actualizar producto' });
+  }
+});
+
+// ============================================
+// ADMIN - ELIMINAR PRODUCTO (marcar inactivo)
+// ============================================
+app.delete('/api/admin/productos/:id', auth.verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('productos')
+      .update({ activo: false })
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Error eliminando producto:', error);
+      return res.status(500).json({ error: 'Error al eliminar producto: ' + error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    res.json({ 
+      mensaje: 'Producto eliminado exitosamente',
+      producto: data[0]
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al eliminar producto' });
+  }
+});
+
+// ============================================
+// PEDIDOS - CREAR PEDIDO CON TRANSACCIÓN
+// ============================================
+app.post('/api/pedidos', async (req, res) => {
   const { userId, cliente, items, total, metodoPago, numeroOperacion, comprobanteUrl } = req.body;
 
-  // Usar el userId enviado desde el frontend
-  const finalUserId = userId || 1; // Si no viene, usar 1 como fallback
+  const finalUserId = userId || 1;
 
   if (!cliente || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ mensaje: 'Datos de pedido inválidos' });
   }
 
-  db.query('START TRANSACTION', async (err) => {
-    if (err) {
-      console.error('Error iniciando transacción:', err);
-      return res.status(500).json({ mensaje: 'Error interno' });
-    }
+  const codigoSeguimiento = 'PED-' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 4).toUpperCase();
 
-    const codigoSeguimiento = 'PED-' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 4).toUpperCase();
+  try {
+    // 1. Crear pedido
+    const { data: pedidoData, error: pedidoError } = await supabase
+      .from('pedidos')
+      .insert({
+        usuario_id: finalUserId,
+        codigo_seguimiento: codigoSeguimiento,
+        total: parseFloat(total),
+        direccion_envio: cliente.direccion,
+        metodo_compra: userId ? 'con_cuenta' : 'invitado'
+      })
+      .select();
 
-    const pedidoQuery = `
-      INSERT INTO pedidos (
-        usuario_id, 
-        codigo_seguimiento, 
-        total, 
-        direccion_envio, 
-        metodo_compra
-      ) VALUES (?, ?, ?, ?, ?)
-    `;
-    const pedidoValues = [
-      finalUserId,  // ← CAMBIO AQUÍ
-      codigoSeguimiento,
-      total,
-      cliente.direccion,
-      userId ? 'con_cuenta' : 'invitado'  // ← CAMBIO: Si tiene userId es con cuenta
-    ];
+    if (pedidoError) throw pedidoError;
+    const pedidoId = pedidoData[0].id;
 
-    db.query(pedidoQuery, pedidoValues, (err, result) => {
-      if (err) {
-        console.error('Error insertando pedido:', err);
-        return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al crear pedido' }));
+    // 2. Crear pago
+    const { error: pagoError } = await supabase
+      .from('pagos')
+      .insert({
+        pedido_id: pedidoId,
+        monto: parseFloat(total),
+        metodo_pago: metodoPago,
+        numero_operacion: numeroOperacion,
+        comprobante_url: comprobanteUrl,
+        estado: 'pendiente'
+      });
+
+    if (pagoError) throw pagoError;
+
+    // 3. Procesar items
+    for (const item of items) {
+      const productoId = item.producto_id || item.id || item.productoId;
+      const cantidad = parseInt(item.cantidad);
+      const precio = parseFloat(item.precio || item.precio_unitario || 0);
+      const subtotal = parseFloat((precio * cantidad).toFixed(2));
+
+      // Verificar y actualizar stock
+      const { data: producto, error: productoError } = await supabase
+        .from('productos')
+        .select('stock')
+        .eq('id', productoId)
+        .single();
+
+      if (productoError || !producto || producto.stock < cantidad) {
+        throw new Error(`Stock insuficiente para producto ${productoId}`);
       }
 
-      const pedidoId = result.insertId;
+      // Actualizar stock
+      const { error: stockError } = await supabase
+        .from('productos')
+        .update({ stock: producto.stock - cantidad })
+        .eq('id', productoId);
 
-      const pagoQuery = `
-        INSERT INTO pagos (
-          pedido_id,
-          monto,
-          metodo_pago,
-          numero_operacion,
-          comprobante_url,
-          estado
-        ) VALUES (?, ?, ?, ?, ?, 'pendiente')
-      `;
-      
-      db.query(pagoQuery, [pedidoId, total, metodoPago, numeroOperacion, comprobanteUrl], (err) => {
-        if (err) {
-          console.error('Error insertando pago:', err);
-          return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al registrar el pago' }));
-        }
+      if (stockError) throw stockError;
 
-        const processItem = (index) => {
-          if (index >= items.length) {
-            return db.query('COMMIT', (err) => {
-              if (err) {
-                console.error('Error en commit:', err);
-                return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al confirmar pedido' }));
-              }
-              return res.status(201).json({ 
-                pedidoId, 
-                codigoSeguimiento,
-                mensaje: 'Pedido creado correctamente' 
-              });
-            });
-          }
+      // Insertar detalle
+      const { error: detalleError } = await supabase
+        .from('detalle_pedidos')
+        .insert({
+          pedido_id: pedidoId,
+          producto_id: productoId,
+          cantidad: cantidad,
+          precio_unitario: precio,
+          subtotal: subtotal
+        });
 
-          const it = items[index];
-          const productoId = it.producto_id || it.id || it.productoId;
-          const cantidad = it.cantidad;
-          const precio = it.precio || it.precio_unitario || 0;
-          const subtotal = (precio * cantidad).toFixed(2);
+      if (detalleError) throw detalleError;
+    }
 
-          const updateStockQuery = 'UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?';
-          db.query(updateStockQuery, [cantidad, productoId, cantidad], (err, updateResult) => {
-            if (err) {
-              console.error('Error actualizando stock:', err);
-              return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al actualizar stock' }));
-            }
-
-            if (updateResult.affectedRows === 0) {
-              return db.query('ROLLBACK', () => res.status(409).json({ mensaje: `Stock insuficiente para el producto ${productoId}` }));
-            }
-
-            const detalleQuery = `
-              INSERT INTO detalle_pedidos (
-                pedido_id,
-                producto_id,
-                cantidad,
-                precio_unitario,
-                subtotal
-              ) VALUES (?, ?, ?, ?, ?)
-            `;
-            
-            db.query(detalleQuery, [pedidoId, productoId, cantidad, precio, subtotal], (err) => {
-              if (err) {
-                console.error('Error insertando detalle_pedido:', err);
-                return db.query('ROLLBACK', () => res.status(500).json({ mensaje: 'Error interno al insertar detalle' }));
-              }
-
-              processItem(index + 1);
-            });
-          });
-        };
-
-        processItem(0);
-      });
+    res.status(201).json({ 
+      pedidoId, 
+      codigoSeguimiento,
+      mensaje: 'Pedido creado correctamente' 
     });
-  });
+
+  } catch (error) {
+    console.error('Error en pedido:', error);
+    res.status(500).json({ mensaje: 'Error al procesar pedido: ' + error.message });
+  }
 });
 
 // ============================================
-// SUBIDA DE COMPROBANTES
+// SUBIR COMPROBANTE A SUPABASE STORAGE
 // ============================================
-app.post('/api/upload-comprobante', upload.single('comprobante'), (req, res) => {
+app.post('/api/upload-comprobante', upload.single('comprobante'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se subió ningún archivo' });
   }
 
-  const comprobanteUrl = `${req.protocol}://${req.get('host')}/comprobantes/${req.file.filename}`;
-  res.json({ url: comprobanteUrl });
+  try {
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+
+    const { data, error } = await supabase.storage
+      .from('comprobantes')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    const { data: publicUrlData } = supabase.storage
+      .from('comprobantes')
+      .getPublicUrl(fileName);
+
+    res.json({ url: publicUrlData.publicUrl });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al subir comprobante: ' + error.message });
+  }
 });
 
+// ============================================
+// ADMIN - GESTIÓN DE PEDIDOS
+// ============================================
+
+// Obtener todos los pedidos
+app.get('/api/admin/pedidos', auth.verifyAdmin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('pedidos')
+      .select('*')
+      .order('fecha_pedido', { ascending: false });
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error obteniendo pedidos:', error);
+    res.status(500).json({ error: 'Error al obtener pedidos' });
+  }
+});
+
+// Actualizar estado de pedido
+app.put('/api/admin/pedidos/:id/estado', auth.verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('pedidos')
+      .update({ estado })
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+
+    res.json({ 
+      mensaje: 'Estado actualizado',
+      pedido: data[0]
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al actualizar estado' });
+  }
+});
+
+// Obtener detalle de un pedido específico
+app.get('/api/admin/pedidos/:id', auth.verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data: pedido, error: pedidoError } = await supabase
+      .from('pedidos')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (pedidoError) throw pedidoError;
+
+    const { data: detalles, error: detallesError } = await supabase
+      .from('detalle_pedidos')
+      .select('*, productos(*)')
+      .eq('pedido_id', id);
+
+    if (detallesError) throw detallesError;
+
+    res.json({
+      ...pedido,
+      detalles
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al obtener detalle del pedido' });
+  }
+});
 // ============================================
 // INICIAR SERVIDOR
 // ============================================
 app.listen(PORT, () => {
   console.log(`
-  http://localhost:${PORT}
+ 
+    http://localhost:${PORT}              
+ 
   `);
 });
-

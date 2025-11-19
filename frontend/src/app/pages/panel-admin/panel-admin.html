@@ -1,7 +1,7 @@
-<nav class="navbar navbar-dark bg-dark">
+<nav class="navbar navbar-dark bg-dark shadow-sm">
   <div class="container-fluid">
     <span class="navbar-brand mb-0 h1">
-      <i class="bi bi-shield-lock"></i> Panel de Administración
+      <i class="bi bi-shield-lock"></i> Panel de Administración - FashionStyle
     </span>
     <button class="btn btn-outline-light btn-sm" (click)="logout()">
       <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
@@ -9,13 +9,63 @@
   </div>
 </nav>
 
-<div class="container mt-4">
+<div class="container-fluid mt-4 px-4">
   
-  <!-- Formulario -->
-  <div class="card mb-4">
+  <!-- Estadísticas -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card text-center border-primary shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-box-seam fs-1 text-primary"></i>
+          <h3 class="mt-2">{{ stats.totalProductos }}</h3>
+          <p class="text-muted mb-0">Productos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card text-center border-success shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-cart-check fs-1 text-success"></i>
+          <h3 class="mt-2">{{ stats.totalPedidos }}</h3>
+          <p class="text-muted mb-0">Pedidos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card text-center border-info shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-currency-dollar fs-1 text-info"></i>
+          <h3 class="mt-2">S/ {{ stats.ventasTotal.toFixed(2) }}</h3>
+          <p class="text-muted mb-0">Total Ventas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card text-center border-warning shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-clock-history fs-1 text-warning"></i>
+          <h3 class="mt-2">{{ stats.pedidosPendientes }}</h3>
+          <p class="text-muted mb-0">Pendientes</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTÓN PARA MOSTRAR/OCULTAR FORMULARIO -->
+  <div class="mb-4">
+    <button 
+      class="btn btn-lg btn-primary shadow" 
+      (click)="toggleFormulario()">
+      <i class="bi" [ngClass]="mostrarFormulario ? 'bi-x-circle' : 'bi-plus-circle'"></i>
+      {{ mostrarFormulario ? 'Cancelar' : (modoEdicion ? 'Editar Producto' : 'Agregar Nuevo Producto') }}
+    </button>
+  </div>
+  
+  <!-- FORMULARIO DESPLEGABLE -->
+  <div class="card mb-4 shadow" *ngIf="mostrarFormulario">
     <div class="card-header bg-primary text-white">
       <h5 class="mb-0">
-        <i class="bi bi-plus-circle"></i> 
+        <i class="bi" [ngClass]="modoEdicion ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
         {{ modoEdicion ? 'Editar Producto' : 'Agregar Nuevo Producto' }}
       </h5>
     </div>
@@ -23,60 +73,62 @@
       <form (ngSubmit)="guardarProducto()">
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label class="form-label">Nombre</label>
+            <label class="form-label fw-bold">Nombre *</label>
             <input type="text" class="form-control" [(ngModel)]="productoForm.nombre" name="nombre" required>
           </div>
           
           <div class="col-md-6 mb-3">
-            <label class="form-label">Categoría</label>
+            <label class="form-label fw-bold">Categoría *</label>
             <select class="form-select" [(ngModel)]="productoForm.categoria" name="categoria">
               <option *ngFor="let cat of categorias" [value]="cat">{{ cat }}</option>
             </select>
           </div>
 
           <div class="col-md-12 mb-3">
-            <label class="form-label">Descripción</label>
+            <label class="form-label fw-bold">Descripción</label>
             <textarea class="form-control" [(ngModel)]="productoForm.descripcion" name="descripcion" rows="2"></textarea>
           </div>
 
           <div class="col-md-4 mb-3">
-            <label class="form-label">Precio (S/)</label>
+            <label class="form-label fw-bold">Precio (S/) *</label>
             <input type="number" step="0.01" class="form-control" [(ngModel)]="productoForm.precio" name="precio" required>
           </div>
 
           <div class="col-md-4 mb-3">
-            <label class="form-label">Stock</label>
+            <label class="form-label fw-bold">Stock *</label>
             <input type="number" class="form-control" [(ngModel)]="productoForm.stock" name="stock" required>
           </div>
 
           <div class="col-md-4 mb-3">
-            <label class="form-label">Talla</label>
+            <label class="form-label fw-bold">Talla</label>
             <input type="text" class="form-control" [(ngModel)]="productoForm.talla" name="talla" placeholder="Ej: M, L, 32">
           </div>
 
           <div class="col-md-6 mb-3">
-            <label class="form-label">Color</label>
+            <label class="form-label fw-bold">Color</label>
             <input type="text" class="form-control" [(ngModel)]="productoForm.color" name="color">
           </div>
 
           <div class="col-md-6 mb-3">
-            <label class="form-label">Imagen (subir desde PC)</label>
+            <label class="form-label fw-bold">Imagen del Producto</label>
             <input type="file" accept="image/*" class="form-control" (change)="onFileSelected($event)">
-            <small class="text-muted">También puedes pegar una URL después de subir si lo prefieres.</small>
-            <div class="mt-2">
-              <img *ngIf="previewUrl" [src]="previewUrl" alt="Preview" style="max-width:120px; max-height:120px; object-fit:cover; border-radius:6px;">
-              <img *ngIf="!previewUrl && productoForm.imagen_url" [src]="productoForm.imagen_url" alt="Imagen" style="max-width:120px; max-height:120px; object-fit:cover; border-radius:6px;">
+            <small class="text-muted">Sube una imagen desde tu computadora</small>
+            <div class="mt-2" *ngIf="previewUrl || productoForm.imagen_url">
+              <img 
+                [src]="previewUrl || productoForm.imagen_url" 
+                alt="Preview" 
+                class="img-thumbnail" 
+                style="max-width:150px; max-height:150px; object-fit:cover;">
             </div>
-            <!-- campo oculto para enviar la URL final (se llena automáticamente tras subir) -->
             <input type="hidden" [(ngModel)]="productoForm.imagen_url" name="imagen_url">
           </div>
         </div>
 
         <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-save"></i> {{ modoEdicion ? 'Actualizar Producto' : 'Guardar Producto' }}
           </button>
-          <button type="button" class="btn btn-secondary" (click)="limpiarFormulario()" *ngIf="modoEdicion">
+          <button type="button" class="btn btn-secondary" (click)="toggleFormulario()">
             <i class="bi bi-x-circle"></i> Cancelar
           </button>
         </div>
@@ -84,24 +136,22 @@
     </div>
   </div>
 
-  <!-- Tabla de Productos -->
-  <div class="card">
+  <!-- TABLA DE PRODUCTOS -->
+  <div class="card mb-4 shadow">
     <div class="card-header bg-secondary text-white">
       <h5 class="mb-0">
-        <i class="bi bi-list-ul"></i> Lista de Productos
+        <i class="bi bi-box-seam"></i> Gestión de Productos
       </h5>
     </div>
     <div class="card-body">
       
-      <!-- Loading -->
       <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary"></div>
+        <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-2">Cargando productos...</p>
       </div>
 
-      <!-- Tabla -->
       <div *ngIf="!isLoading" class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
               <th>ID</th>
@@ -112,26 +162,36 @@
               <th>Stock</th>
               <th>Talla</th>
               <th>Color</th>
-              <th>Acciones</th>
+              <th class="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let producto of productos">
-              <td>{{ producto.id }}</td>
+              <td><strong>#{{ producto.id }}</strong></td>
               <td>
-                <img [src]="producto.imagen_url" [alt]="producto.nombre" style="width: 50px; height: 50px; object-fit: cover;">
+                <img 
+                  [src]="producto.imagen_url" 
+                  [alt]="producto.nombre" 
+                  class="rounded"
+                  style="width: 60px; height: 60px; object-fit: cover;">
               </td>
               <td>{{ producto.nombre }}</td>
               <td><span class="badge bg-info">{{ producto.categoria }}</span></td>
-              <td>S/ {{ producto.precio }}</td>
-              <td>{{ producto.stock }}</td>
+              <td><strong>S/ {{ producto.precio }}</strong></td>
+              <td>
+                <span 
+                  class="badge" 
+                  [ngClass]="producto.stock > 10 ? 'bg-success' : (producto.stock > 0 ? 'bg-warning' : 'bg-danger')">
+                  {{ producto.stock }}
+                </span>
+              </td>
               <td>{{ producto.talla }}</td>
               <td>{{ producto.color }}</td>
-              <td>
-                <button class="btn btn-sm btn-warning me-1" (click)="editarProducto(producto)">
+              <td class="text-center">
+                <button class="btn btn-sm btn-warning me-1" (click)="editarProducto(producto)" title="Editar">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" (click)="eliminarProducto(producto.id)">
+                <button class="btn btn-sm btn-danger" (click)="eliminarProducto(producto.id)" title="Eliminar">
                   <i class="bi bi-trash"></i>
                 </button>
               </td>
@@ -139,9 +199,80 @@
           </tbody>
         </table>
 
-        <p *ngIf="productos.length === 0" class="text-center text-muted">
-          No hay productos registrados
-        </p>
+        <div *ngIf="productos.length === 0" class="alert alert-info text-center">
+          <i class="bi bi-info-circle"></i> No hay productos registrados
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TABLA DE PEDIDOS -->
+  <div class="card shadow">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-cart-check"></i> Gestión de Pedidos
+      </h5>
+    </div>
+    <div class="card-body">
+      
+      <div *ngIf="isLoadingPedidos" class="text-center py-5">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-2">Cargando pedidos...</p>
+      </div>
+
+      <div *ngIf="!isLoadingPedidos" class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Código</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th>Método Pago</th>
+              <th>Fecha</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let pedido of pedidos">
+              <td><strong>#{{ pedido.id }}</strong></td>
+              <td><code>{{ pedido.codigo_seguimiento }}</code></td>
+              <td>
+                <small class="text-muted">Usuario ID: {{ pedido.usuario_id }}</small>
+              </td>
+              <td><strong>S/ {{ pedido.total }}</strong></td>
+              <td>
+                <span class="badge" [ngClass]="'bg-' + getEstadoColor(pedido.estado)">
+                  {{ pedido.estado }}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-secondary">{{ pedido.metodo_compra }}</span>
+              </td>
+              <td>
+                <small>{{ pedido.fecha_pedido | date:'dd/MM/yyyy HH:mm' }}</small>
+              </td>
+              <td class="text-center">
+                <select 
+                  class="form-select form-select-sm" 
+                  [value]="pedido.estado"
+                  (change)="cambiarEstadoPedido(pedido.id, $any($event.target).value)">
+                  <option value="pendiente">Pendiente</option>
+                  <option value="procesando">Procesando</option>
+                  <option value="enviado">Enviado</option>
+                  <option value="entregado">Entregado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div *ngIf="pedidos.length === 0" class="alert alert-info text-center">
+          <i class="bi bi-info-circle"></i> No hay pedidos registrados
+        </div>
       </div>
 
     </div>
