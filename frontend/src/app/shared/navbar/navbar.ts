@@ -15,20 +15,16 @@ export class NavbarComponent implements OnInit {
   nombreUsuario: string = '';
   cantidadCarrito: number = 0;
 
-
   constructor(
     public authService: AuthService,
-    public carritoService: CarritoService  // público para usar en el template
+    public carritoService: CarritoService
   ) {}
 
-
   ngOnInit() {
-    // Suscribirse al nombre del usuario
     this.authService.nombreUsuario$.subscribe(nombre => {
       this.nombreUsuario = nombre;
     });
     
-    // Si ya hay sesión, cargar el nombre
     if (this.authService.isLoggedIn()) {
       this.nombreUsuario = this.authService.getNombreUsuario();
     }
@@ -38,12 +34,38 @@ export class NavbarComponent implements OnInit {
     this.authService.logout();
   }
 
-  // Helpers para el carrito
   eliminarDelCarrito(id: number) {
-    this.carritoService.removeItem(id);
+    if (confirm('¿Eliminar este producto del carrito?')) {
+      this.carritoService.removeItem(id);
+    }
   }
 
   actualizarCantidad(id: number, cantidad: number) {
-    this.carritoService.updateQuantity(id, cantidad);
+    if (cantidad < 1) {
+      this.eliminarDelCarrito(id);
+      return;
+    }
+
+    const actualizado = this.carritoService.updateQuantity(id, cantidad);
+    
+    if (!actualizado) {
+      const item = this.carritoService.getCart().items.find(i => i.id === id);
+      alert(`Stock insuficiente. Máximo disponible: ${item?.stock || 0}`);
+    }
+  }
+
+  onCantidadInput(id: number, event: any) {
+    const nuevaCantidad = parseInt(event.target.value);
+    if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
+      event.target.value = 1;
+      return;
+    }
+    this.actualizarCantidad(id, nuevaCantidad);
+  }
+
+  vaciarCarrito() {
+    if (confirm('¿Vaciar todo el carrito?')) {
+      this.carritoService.clear();
+    }
   }
 }

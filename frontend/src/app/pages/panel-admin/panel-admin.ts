@@ -19,7 +19,7 @@ export class PanelAdminComponent implements OnInit {
   pedidos: any[] = [];
   isLoading: boolean = true;
   isLoadingPedidos: boolean = true;
-  mostrarFormulario: boolean = false; // ← NUEVO
+  mostrarFormulario: boolean = false; 
   modoEdicion: boolean = false;
   selectedFile: File | null = null;
   previewUrl: string | null = null;
@@ -149,28 +149,28 @@ export class PanelAdminComponent implements OnInit {
         // Editar
         this.adminService.editarProducto(this.productoForm.id, this.productoForm).subscribe({
           next: () => {
-            alert('✅ Producto actualizado exitosamente');
+            alert('Producto actualizado exitosamente');
             this.cargarProductos();
             this.limpiarFormulario();
-            this.mostrarFormulario = false; // ← CERRAR FORMULARIO
+            this.mostrarFormulario = false; 
           },
           error: (error) => {
             console.error('Error:', error);
-            alert('❌ Error al actualizar producto');
+            alert('Error al actualizar producto');
           }
         });
       } else {
         // Crear
         this.adminService.crearProducto(this.productoForm).subscribe({
           next: () => {
-            alert('✅ Producto creado exitosamente');
+            alert(' Producto creado exitosamente');
             this.cargarProductos();
             this.limpiarFormulario();
             this.mostrarFormulario = false; // ← CERRAR FORMULARIO
           },
           error: (error) => {
             console.error('Error:', error);
-            alert('❌ Error al crear producto');
+            alert('Error al crear producto');
           }
         });
       }
@@ -187,7 +187,7 @@ export class PanelAdminComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error al subir imagen:', err);
-          alert('❌ Error al subir la imagen. Intenta nuevamente.');
+          alert(' Error al subir la imagen. Intenta nuevamente.');
         }
       });
     } else {
@@ -218,12 +218,12 @@ export class PanelAdminComponent implements OnInit {
     if (confirm('¿Estás seguro de eliminar este producto?')) {
       this.adminService.eliminarProducto(id).subscribe({
         next: () => {
-          alert('✅ Producto eliminado exitosamente');
+          alert(' Producto eliminado exitosamente');
           this.cargarProductos();
         },
         error: (error) => {
           console.error('Error:', error);
-          alert('❌ Error al eliminar producto');
+          alert(' Error al eliminar producto');
         }
       });
     }
@@ -235,12 +235,12 @@ export class PanelAdminComponent implements OnInit {
   cambiarEstadoPedido(pedidoId: number, nuevoEstado: string) {
     this.adminService.actualizarEstadoPedido(pedidoId, nuevoEstado).subscribe({
       next: () => {
-        alert('✅ Estado del pedido actualizado');
+        alert(' Estado del pedido actualizado');
         this.cargarDatos();
       },
       error: (error) => {
         console.error('Error:', error);
-        alert('❌ Error al actualizar estado');
+        alert(' Error al actualizar estado');
       }
     });
   }

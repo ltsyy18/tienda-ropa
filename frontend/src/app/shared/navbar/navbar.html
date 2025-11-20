@@ -10,30 +10,40 @@
     
     <div class="collapse navbar-collapse" id="navbarNav">
       <div class="ms-auto">
-        <!-- SI ESTÁ LOGUEADO -->
-        <div class="d-flex align-items-center gap-3" *ngIf="authService.isLoggedIn()">
-          <span class="text-white">
-            <i class="bi bi-person-circle"></i> ¡Bienvenido {{ nombreUsuario }}!
-          </span>
-        
-        <button class="btn btn-sm btn-outline-danger" (click)="logout()">
-          <i class="bi bi-box-arrow-right"></i> Salir
-        </button>
-        </div>
+        <ul class="navbar-nav ms-auto align-items-center">
 
-        <!-- SI NO ESTÁ LOGUEADO -->
-        <div *ngIf="!authService.isLoggedIn()">
-          <i class="text-white text-center p-3">¿No tiene cuenta?</i>
+        <li class="nav-item" *ngIf="authService.isLoggedIn()">
+          <span class="navbar-text text-white me-3">
+            <i class="bi bi-person-circle"></i> {{ nombreUsuario }}
+          </span>
+        </li>
+
+        <li class="nav-item" *ngIf="authService.isLoggedIn()">
+          <button class="btn btn-outline-danger btn-sm" (click)="logout()">
+            <i class="bi bi-box-arrow-right"></i> Salir
+          </button>
+        </li>
+
+        <li class="nav-item" *ngIf="!authService.isLoggedIn()">
           <a routerLink="/login" class="btn btn-primary">
             <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
           </a>
-        </div>
-        <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
-          <i class="bi bi-cart3"></i> Carrito
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="carritoService.totalItems() > 0">
-            {{ carritoService.totalItems() }}
-          </span>
-        </button>
+        </li>
+
+        <li class="nav-item me-2 ms-3">
+          <button class="btn btn-outline-light position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCarrito">
+            <i class="bi bi-cart3"></i> Carrito
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" *ngIf="carritoService.totalItems() > 0">
+              {{ carritoService.totalItems() }}
+            </span>
+          </button>
+        </li>
+
+      </ul>
+
+        
+
+
       </div>
     </div>
   </div>
@@ -69,16 +79,36 @@
                     <small class="text-muted">Precio: S/ {{ item.precio }}</small>
                   </p>
                   <!-- Control de cantidad -->
-                  <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-primary" 
-                            (click)="actualizarCantidad(item.id, item.cantidad - 1)">-</button>
-                    <span>{{ item.cantidad }}</span>
-                    <button class="btn btn-sm btn-outline-primary"
-                            (click)="actualizarCantidad(item.id, item.cantidad + 1)">+</button>
+                  <div *ngIf="item.stock && item.cantidad > item.stock" class="alert alert-warning p-1 mb-2">
+                    <small><i class="bi bi-exclamation-triangle"></i> Stock: {{ item.stock }}</small>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-2 mt-2">
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            (click)="actualizarCantidad(item.id, item.cantidad - 1)">
+                      <i class="bi bi-dash"></i>
+                    </button>
+                    <input type="number" 
+                           class="form-control form-control-sm text-center" 
+                           style="width: 50px;"
+                           [value]="item.cantidad"
+                           [max]="item.stock"
+                           min="1"
+                           (change)="onCantidadInput(item.id, $event)">
+                    <button class="btn btn-sm btn-outline-secondary"
+                            [disabled]="item.stock && item.cantidad >= item.stock"
+                            (click)="actualizarCantidad(item.id, item.cantidad + 1)">
+                      <i class="bi bi-plus"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-danger ms-auto" 
                             (click)="eliminarDelCarrito(item.id)">
                       <i class="bi bi-trash"></i>
                     </button>
+                  </div>
+                  
+                  <div class="text-end mt-2">
+                    <small class="text-muted">Subtotal:</small>
+                    <strong class="text-primary"> S/ {{ (item.precio * item.cantidad).toFixed(2) }}</strong>
                   </div>
                 </div>
               </div>
@@ -86,19 +116,22 @@
           </div>
         }
         
-        <!-- Total y botón de checkout -->
         <div class="border-top pt-3 mt-3">
           <div class="d-flex justify-content-between mb-2">
-            <span>Total Items:</span>
+            <span class="text-muted">Items:</span>
             <strong>{{ carritoService.totalItems() }}</strong>
           </div>
           <div class="d-flex justify-content-between mb-3">
-            <span>Total:</span>
-            <strong>S/ {{ carritoService.totalPrice() }}</strong>
+            <h5 class="mb-0">Total:</h5>
+            <h5 class="mb-0 text-primary">S/ {{ carritoService.totalPrice().toFixed(2) }}</h5>
           </div>
-          <a routerLink="/checkout" class="btn btn-primary w-100" data-bs-dismiss="offcanvas">
-            Continuar con la compra
+          
+          <a routerLink="/checkout" class="btn btn-primary w-100 mb-2" data-bs-dismiss="offcanvas">
+            <i class="bi bi-credit-card"></i> Ir a pagar
           </a>
+          <button class="btn btn-outline-danger w-100" (click)="vaciarCarrito()">
+            <i class="bi bi-trash"></i> Vaciar carrito
+          </button>
         </div>
       </div>
     } @else {

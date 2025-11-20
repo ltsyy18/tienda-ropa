@@ -16,11 +16,13 @@ export class ProductosComponent implements OnInit {
   categoriaSeleccionada: string = 'Todos';
   categorias: string[] = ['Todos', 'Mujer', 'Hombre', 'Niños'];
   isLoading: boolean = true;
+  mensajeNotificacion: string = '';
+  mostrarNotificacion: boolean = false;
 
   constructor(
     private productoService: ProductoService,
     private cd: ChangeDetectorRef,
-    private carritoService: CarritoService
+    public carritoService: CarritoService
   ) {}
 
   ngOnInit() {
@@ -34,7 +36,6 @@ export class ProductosComponent implements OnInit {
         this.productos = data;
         this.isLoading = false;
         this.cd.detectChanges(); 
-        console.log('Productos cargados:', this.productos);
       },
       error: (error) => {
         console.error('Error al cargar productos:', error);
@@ -44,7 +45,6 @@ export class ProductosComponent implements OnInit {
   }
 
   filtrarPorCategoria(categoria: string) {
-    console.log('Categoría seleccionada:', categoria); //  para depurar
     this.categoriaSeleccionada = categoria;
     this.isLoading = true;
 
@@ -55,7 +55,7 @@ export class ProductosComponent implements OnInit {
         next: (data) => {
           this.productos = data;
           this.isLoading = false;
-          this.cd.detectChanges(); //  asegura refresco inmediato
+          this.cd.detectChanges();
         },
         error: (error) => {
           console.error('Error al filtrar por categoría:', error);
@@ -66,7 +66,36 @@ export class ProductosComponent implements OnInit {
   }
 
   agregarAlCarrito(producto: any) {
-  this.carritoService.addItem(producto);
-  // TODO: Mostrar toast/notificación de éxito
+    const stockDisponible = this.carritoService.getStockDisponible(producto);
+    
+    if (stockDisponible <= 0) {
+      this.mostrarMensaje(`No hay más stock disponible de ${producto.nombre}`);
+      return;
+    }
+
+    const agregado = this.carritoService.addItem(producto);
+    
+    if (agregado) {
+      this.mostrarMensaje(`${producto.nombre} agregado al carrito`);
+    } else {
+      this.mostrarMensaje(`Stock insuficiente de ${producto.nombre}`);
+    }
+  }
+
+  getStockDisponible(producto: any): number {
+    return this.carritoService.getStockDisponible(producto);
+  }
+
+  getCantidadEnCarrito(producto: any): number {
+    return this.carritoService.getCantidadEnCarrito(producto.id);
+  }
+
+  private mostrarMensaje(mensaje: string) {
+    this.mensajeNotificacion = mensaje;
+    this.mostrarNotificacion = true;
+    
+    setTimeout(() => {
+      this.mostrarNotificacion = false;
+    }, 3000);
   }
 }

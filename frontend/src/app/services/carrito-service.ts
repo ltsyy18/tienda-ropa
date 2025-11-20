@@ -18,10 +18,8 @@ interface Cart {
   providedIn: 'root'
 })
 export class CarritoService {
-  // Usar signals para estado reactivo
   private cartSignal = signal<Cart>({ items: [] });
   
-  // Computados para totales
   public totalItems = computed(() => 
     this.cartSignal().items.reduce((sum, item) => sum + item.cantidad, 0)
   );
@@ -31,25 +29,30 @@ export class CarritoService {
   );
 
   constructor() {
-    // Cargar carrito de localStorage al inicio
     this.loadCart();
   }
 
-  // Obtener carrito actual
   getCart(): Cart {
     return this.cartSignal();
   }
 
-  // Añadir item al carrito
-  addItem(producto: any, cantidad: number = 1): void {
+  addItem(producto: any, cantidad: number = 1): boolean {
     const cart = this.cartSignal();
     const existingItem = cart.items.find(item => item.id === producto.id);
 
     if (existingItem) {
-      // Actualizar cantidad si ya existe
-      existingItem.cantidad += cantidad;
+      const nuevaCantidad = existingItem.cantidad + cantidad;
+      
+      if (producto.stock && nuevaCantidad > producto.stock) {
+        return false;
+      }
+      
+      existingItem.cantidad = nuevaCantidad;
     } else {
-      // Añadir nuevo item
+      if (producto.stock && cantidad > producto.stock) {
+        return false;
+      }
+
       cart.items.push({
         id: producto.id,
         nombre: producto.nombre,
@@ -60,29 +63,33 @@ export class CarritoService {
       });
     }
 
-    // Actualizar signal y persistir
     this.cartSignal.set({ ...cart });
     this.saveCart();
+    return true;
   }
 
-  // Actualizar cantidad de un item
-  updateQuantity(id: number, cantidad: number): void {
+  updateQuantity(id: number, cantidad: number): boolean {
     const cart = this.cartSignal();
     const item = cart.items.find(item => item.id === id);
 
     if (item) {
       if (cantidad <= 0) {
-        // Eliminar si cantidad es 0 o menor
         this.removeItem(id);
-      } else {
-        item.cantidad = cantidad;
-        this.cartSignal.set({ ...cart });
-        this.saveCart();
+        return true;
       }
+
+      if (item.stock && cantidad > item.stock) {
+        return false;
+      }
+
+      item.cantidad = cantidad;
+      this.cartSignal.set({ ...cart });
+      this.saveCart();
+      return true;
     }
+    return false;
   }
 
-  // Eliminar item del carrito
   removeItem(id: number): void {
     const cart = this.cartSignal();
     cart.items = cart.items.filter(item => item.id !== id);
@@ -90,13 +97,21 @@ export class CarritoService {
     this.saveCart();
   }
 
-  // Limpiar carrito
   clear(): void {
     this.cartSignal.set({ items: [] });
     this.saveCart();
   }
 
-  // --- Helpers privados ---
+  getCantidadEnCarrito(productoId: number): number {
+    const cart = this.cartSignal();
+    const item = cart.items.find(item => item.id === productoId);
+    return item ? item.cantidad : 0;
+  }
+
+  getStockDisponible(producto: any): number {
+    const cantidadEnCarrito = this.getCantidadEnCarrito(producto.id);
+    return producto.stock - cantidadEnCarrito;
+  }
 
   private loadCart(): void {
     const savedCart = localStorage.getItem('cart');
@@ -105,7 +120,7 @@ export class CarritoService {
         const cart = JSON.parse(savedCart);
         this.cartSignal.set(cart);
       } catch (e) {
-        console.error('Error loading cart:', e);
+        console.error('Error al cargar carrito:', e);
         localStorage.removeItem('cart');
       }
     }
