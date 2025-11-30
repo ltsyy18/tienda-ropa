@@ -11,45 +11,6 @@
 
 <div class="container-fluid mt-4 px-4">
   
-  <!-- Estadísticas -->
-  <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-      <div class="card text-center border-primary shadow-sm">
-        <div class="card-body">
-          <i class="bi bi-box-seam fs-1 text-primary"></i>
-          <h3 class="mt-2">{{ stats.totalProductos }}</h3>
-          <p class="text-muted mb-0">Productos</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-center border-success shadow-sm">
-        <div class="card-body">
-          <i class="bi bi-cart-check fs-1 text-success"></i>
-          <h3 class="mt-2">{{ stats.totalPedidos }}</h3>
-          <p class="text-muted mb-0">Pedidos</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-center border-info shadow-sm">
-        <div class="card-body">
-          <i class="bi bi-currency-dollar fs-1 text-info"></i>
-          <h3 class="mt-2">S/ {{ stats.ventasTotal.toFixed(2) }}</h3>
-          <p class="text-muted mb-0">Total Ventas</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-center border-warning shadow-sm">
-        <div class="card-body">
-          <i class="bi bi-clock-history fs-1 text-warning"></i>
-          <h3 class="mt-2">{{ stats.pedidosPendientes }}</h3>
-          <p class="text-muted mb-0">Pendientes</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- BOTÓN PARA MOSTRAR/OCULTAR FORMULARIO -->
   <div class="mb-4">

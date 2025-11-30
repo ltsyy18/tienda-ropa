@@ -39,7 +39,7 @@ app.post('/api/auth/register', auth.register);
 
 app.get('/api/admin/dashboard', auth.verifyAdmin, (req, res) => {
   res.json({ 
-    mensaje: `✅ Acceso Concedido al Dashboard. Usuario: ${req.user.email}`,
+    mensaje: `Acceso Concedido al Dashboard. Usuario: ${req.user.email}`,
     userId: req.user.id 
   });
 });
@@ -139,6 +139,7 @@ app.post('/api/admin/upload', auth.verifyAdmin, upload.single('imagen'), async (
     // Obtener URL pública
     const { data: publicUrlData } = supabase.storage
       .from('productos')
+      
       .getPublicUrl(fileName);
 
     res.json({ imagen_url: publicUrlData.publicUrl });
