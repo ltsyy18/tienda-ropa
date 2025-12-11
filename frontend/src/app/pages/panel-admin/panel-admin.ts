@@ -259,4 +259,17 @@ export class PanelAdminComponent implements OnInit {
   logout() {
     this.authService.logout();
   }
+
+confirmarCambioEstado(pedido: any) {
+  const nuevoEstado = pedido.nuevoEstado || pedido.estado;
+  
+  this.adminService.actualizarEstadoPedido(pedido.id, nuevoEstado).subscribe({
+    next: () => {
+      this.cargarDatos();
+    },
+    error: () => {
+      alert('Error al actualizar');
+    }
+  });
+}
 }

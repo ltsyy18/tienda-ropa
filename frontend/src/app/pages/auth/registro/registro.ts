@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -14,8 +14,8 @@ import { AuthService } from '../../../services/auth';
 export class RegistroComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private cd = inject(ChangeDetectorRef);
 
-  // Variables del formulario
   dni = '';
   nombre = '';
   apellido = '';
@@ -28,31 +28,25 @@ export class RegistroComponent {
   isSubmitting = false;
   passwordInputType: 'password' | 'text' = 'password';
 
-  constructor() {}
-
   togglePassword(): void {
     this.passwordInputType = this.passwordInputType === 'password' ? 'text' : 'password';
   }
 
-  // Validar solo letras (y espacios)
   validarSoloLetras(valor: string): boolean {
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     return regex.test(valor);
   }
 
-  // Validar DNI (8 dígitos numéricos)
   validarDNI(dni: string): boolean {
     const regex = /^\d{8}$/;
     return regex.test(dni);
   }
 
-  // Validar teléfono (9 dígitos numéricos)
   validarTelefono(telefono: string): boolean {
     const regex = /^\d{9}$/;
     return regex.test(telefono);
   }
 
-  // Validar email
   validarEmail(email: string): boolean {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
@@ -62,49 +56,50 @@ export class RegistroComponent {
     this.errorMessage = null;
     this.successMessage = null;
 
-    // Validar campos vacíos
     if (!this.dni || !this.nombre || !this.apellido || !this.email || !this.telefono || !this.password) {
-      this.errorMessage = 'Por favor, complete todos los campos.';
+      this.errorMessage = 'Complete todos los campos';
+      this.cd.detectChanges();
       return;
     }
 
-    // Validar DNI
     if (!this.validarDNI(this.dni)) {
-      this.errorMessage = 'El DNI debe tener exactamente 8 dígitos numéricos.';
+      this.errorMessage = 'DNI debe tener 8 dígitos';
+      this.cd.detectChanges();
       return;
     }
 
-    // Validar Nombre
     if (!this.validarSoloLetras(this.nombre)) {
-      this.errorMessage = 'El nombre solo puede contener letras.';
+      this.errorMessage = 'Nombre solo puede contener letras';
+      this.cd.detectChanges();
       return;
     }
 
-    // Validar Apellido
     if (!this.validarSoloLetras(this.apellido)) {
-      this.errorMessage = 'El apellido solo puede contener letras.';
+      this.errorMessage = 'Apellido solo puede contener letras';
+      this.cd.detectChanges();
       return;
     }
 
-    // Validar Email
     if (!this.validarEmail(this.email)) {
-      this.errorMessage = 'Ingrese un correo electrónico válido.';
+      this.errorMessage = 'Email inválido';
+      this.cd.detectChanges();
       return;
     }
 
-    // Validar Teléfono
     if (!this.validarTelefono(this.telefono)) {
-      this.errorMessage = 'El teléfono debe tener exactamente 9 dígitos numéricos.';
+      this.errorMessage = 'Teléfono debe tener 9 dígitos';
+      this.cd.detectChanges();
       return;
     }
 
-    // Validar longitud de contraseña
     if (this.password.length < 6) {
-      this.errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+      this.errorMessage = 'Contraseña mínimo 6 caracteres';
+      this.cd.detectChanges();
       return;
     }
 
     this.isSubmitting = true;
+    this.cd.detectChanges();
 
     this.authService.register(
       this.dni,
@@ -116,43 +111,43 @@ export class RegistroComponent {
     ).subscribe({
       next: (response) => {
         this.isSubmitting = false;
+        this.cd.detectChanges();
+        
         if (response) {
-          this.successMessage = '¡Registro exitoso! Redirigiendo a productos...';
+          this.successMessage = 'Registro exitoso';
+          this.cd.detectChanges();
           setTimeout(() => {
             this.router.navigate(['/productos']); 
-          }, 2000);
+          }, 1500);
         } else {
-          this.errorMessage = 'El correo o DNI ya están registrados.';
+          this.errorMessage = 'Email o DNI ya registrados';
+          this.cd.detectChanges();
         }
       },
       error: (error) => {
         this.isSubmitting = false;
-        this.errorMessage = error?.error?.mensaje || 'Error al registrar. Intente nuevamente.';
+        this.errorMessage = 'Error al registrar';
+        this.cd.detectChanges();
       }
     });
   }
 
-  // Métodos para validación en tiempo real (opcional)
   onDNIInput(event: any): void {
-    // Solo permitir números
     event.target.value = event.target.value.replace(/\D/g, '').slice(0, 8);
     this.dni = event.target.value;
   }
 
   onTelefonoInput(event: any): void {
-    // Solo permitir números
     event.target.value = event.target.value.replace(/\D/g, '').slice(0, 9);
     this.telefono = event.target.value;
   }
 
   onNombreInput(event: any): void {
-    // Solo permitir letras y espacios
     event.target.value = event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
     this.nombre = event.target.value;
   }
 
   onApellidoInput(event: any): void {
-    // Solo permitir letras y espacios
     event.target.value = event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
     this.apellido = event.target.value;
   }
